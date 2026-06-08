@@ -6,246 +6,156 @@ import type { RouteObject } from 'react-router';
 
 const routes: RouteObject[] = [
   {
-    lazy: async () => ({
-      Component: (await import('./routes/layout')).default,
-    }),
+    lazy: async () => ({ ErrorBoundary: (await import('./routes/error')).default }),
     children: [
+    {
+      lazy: async () => ({ Component: (await import('./routes/layout')).default }),
+      children: [
+      { index: true, lazy: async () => ({ Component: (await import('./routes/index')).default }) },
       {
-        index: true,
-        lazy: async () => ({
-          Component: (await import('./routes/index')).default,
-        }),
-      },
-      {
-        lazy: async () => ({
-          Component: (await import('./routes/(beta)/guard')).default,
-        }),
+        lazy: async () => ({ Component: (await import('./routes/(beta)/guard')).default }),
         children: [
-          {
-            path: 'beta-features',
-            lazy: async () => ({
-              Component: (await import('./routes/(beta)/beta-features')).default,
-            }),
-          },
+        { path: 'beta-features', lazy: async () => ({ Component: (await import('./routes/(beta)/beta-features')).default }) }
         ],
       },
       {
-        lazy: async () => ({
-          Component: (await import('./routes/(marketing)/layout')).default,
-        }),
+        lazy: async () => ({ Component: (await import('./routes/(marketing)/layout')).default }),
         children: [
-          {
-            path: 'features',
-            lazy: async () => ({
-              Component: (await import('./routes/(marketing)/features')).default,
-            }),
-          },
-          {
-            path: 'pricing',
-            lazy: async () => ({
-              Component: (await import('./routes/(marketing)/pricing')).default,
-            }),
-          },
+        { path: 'features', lazy: async () => ({ Component: (await import('./routes/(marketing)/features')).default }) },
+        { path: 'pricing', lazy: async () => ({ Component: (await import('./routes/(marketing)/pricing')).default }) }
         ],
       },
       {
-        lazy: async () => ({
-          Component: (await import('./routes/(members)/guard')).default,
-        }),
+        lazy: async () => ({ Component: (await import('./routes/(members)/guard')).default }),
         children: [
-          {
-            lazy: async () => ({
-              Component: (await import('./routes/(members)/layout')).default,
-            }),
-            children: [
-              {
-                path: 'account',
-                lazy: async () => ({
-                  Component: (await import('./routes/(members)/account')).default,
-                }),
-              },
-              {
-                path: 'billing',
-                lazy: async () => ({
-                  Component: (await import('./routes/(members)/billing')).default,
-                }),
-              },
-            ],
-          },
+        {
+          lazy: async () => ({ Component: (await import('./routes/(members)/layout')).default }),
+          children: [
+          { path: 'account', lazy: async () => ({ Component: (await import('./routes/(members)/account')).default }) },
+          { path: 'billing', lazy: async () => ({ Component: (await import('./routes/(members)/billing')).default }) }
+          ],
+        }
         ],
       },
       {
-        lazy: async () => ({
-          Component: (await import('./routes/(shop)/layout')).default,
-        }),
+        lazy: async () => ({ Component: (await import('./routes/(shop)/layout')).default }),
         children: [
-          {
-            lazy: async () => ({
-              Component: (await import('./routes/(shop)/(checkout)/layout')).default,
-            }),
-            children: [
-              {
-                path: 'payment',
-                lazy: async () => ({
-                  Component: (await import('./routes/(shop)/(checkout)/payment')).default,
-                }),
-              },
-            ],
-          },
+        {
+          lazy: async () => ({ Component: (await import('./routes/(shop)/(checkout)/layout')).default }),
+          children: [
+          { path: 'payment', lazy: async () => ({ Component: (await import('./routes/(shop)/(checkout)/payment')).default }) }
+          ],
+        }
         ],
       },
-      {
-        path: 'about',
-        lazy: async () => ({
-          Component: (await import('./routes/about')).default,
-        }),
-      },
+      { path: 'about', lazy: async () => ({ Component: (await import('./routes/about')).default }) },
       {
         path: 'admin',
         children: [
+        {
+          lazy: async () => ({ Component: (await import('./routes/admin/guard')).default }),
+          children: [
           {
-            lazy: async () => ({
-              Component: (await import('./routes/admin/guard')).default,
-            }),
+            lazy: async () => ({ Component: (await import('./routes/admin/layout')).default }),
             children: [
-              {
-                lazy: async () => ({
-                  Component: (await import('./routes/admin/layout')).default,
-                }),
-                children: [
-                  {
-                    index: true,
-                    lazy: async () => ({
-                      Component: (await import('./routes/admin/index')).default,
-                    }),
-                  },
-                  {
-                    path: 'users',
-                    children: [
-                      {
-                        index: true,
-                        lazy: async () => ({
-                          Component: (await import('./routes/admin/users/index')).default,
-                        }),
-                      },
-                      {
-                        path: ':id',
-                        lazy: async () => ({
-                          Component: (await import('./routes/admin/users/[id]')).default,
-                        }),
-                      },
-                    ],
-                  },
-                ],
-              },
+            { index: true, lazy: async () => ({ Component: (await import('./routes/admin/index')).default }) },
+            {
+              path: 'users',
+              children: [
+              { index: true, lazy: async () => ({ Component: (await import('./routes/admin/users/index')).default }) },
+              { path: ':id', lazy: async () => ({ Component: (await import('./routes/admin/users/[id]')).default }) }
+              ],
+            }
             ],
-          },
+          }
+          ],
+        }
         ],
       },
       {
         path: 'blog',
         children: [
-          {
-            lazy: async () => ({
-              Component: (await import('./routes/blog/layout')).default,
-            }),
-            children: [
-              {
-                index: true,
-                lazy: async () => ({
-                  Component: (await import('./routes/blog/index')).default,
-                }),
-              },
-              {
-                path: ':slug',
-                lazy: async () => ({
-                  Component: (await import('./routes/blog/[slug]')).default,
-                }),
-              },
-            ],
-          },
+        {
+          lazy: async () => ({ Component: (await import('./routes/blog/layout')).default }),
+          children: [
+          { index: true, lazy: async () => ({ Component: (await import('./routes/blog/index')).default }) },
+          { path: ':slug', lazy: async () => ({ Component: (await import('./routes/blog/[slug]')).default }) }
+          ],
+        }
         ],
       },
       {
         path: 'dashboard',
         children: [
+        {
+          lazy: async () => ({ ErrorBoundary: (await import('./routes/dashboard/error')).default }),
+          children: [
           {
-            lazy: async () => ({
-              Component: (await import('./routes/dashboard/guard')).default,
-            }),
+            lazy: async () => ({ Component: (await import('./routes/dashboard/guard')).default }),
             children: [
+            {
+              lazy: async () => ({ Component: (await import('./routes/dashboard/layout')).default }),
+              children: [
+              { index: true, lazy: async () => ({ Component: (await import('./routes/dashboard/index')).default }) },
+              { path: 'crash', lazy: async () => ({ Component: (await import('./routes/dashboard/crash')).default }) },
+              { path: 'profile', lazy: async () => ({ Component: (await import('./routes/dashboard/profile')).default }) },
               {
-                lazy: async () => ({
-                  Component: (await import('./routes/dashboard/layout')).default,
-                }),
+                path: 'settings',
                 children: [
-                  {
-                    index: true,
-                    lazy: async () => ({
-                      Component: (await import('./routes/dashboard/index')).default,
-                    }),
-                  },
-                  {
-                    path: 'profile',
-                    lazy: async () => ({
-                      Component: (await import('./routes/dashboard/profile')).default,
-                    }),
-                  },
-                  {
-                    path: 'settings',
-                    children: [
-                      {
-                        index: true,
-                        lazy: async () => ({
-                          Component: (await import('./routes/dashboard/settings/index')).default,
-                        }),
-                      },
-                      {
-                        path: 'account',
-                        lazy: async () => ({
-                          Component: (await import('./routes/dashboard/settings/account')).default,
-                        }),
-                      },
-                      {
-                        path: 'security',
-                        lazy: async () => ({
-                          Component: (await import('./routes/dashboard/settings/security')).default,
-                        }),
-                      },
-                    ],
-                  },
+                { index: true, lazy: async () => ({ Component: (await import('./routes/dashboard/settings/index')).default }) },
+                { path: 'account', lazy: async () => ({ Component: (await import('./routes/dashboard/settings/account')).default }) },
+                { path: 'security', lazy: async () => ({ Component: (await import('./routes/dashboard/settings/security')).default }) }
                 ],
-              },
+              }
+              ],
+            }
             ],
-          },
+          }
+          ],
+        }
         ],
       },
-      {
-        path: 'extra',
-        lazy: async () => ({
-          Component: (await import('./routes/extra')).default,
-        }),
-      },
-      {
-        path: 'login',
-        lazy: async () => ({
-          Component: (await import('./routes/login')).default,
-        }),
-      },
-      {
-        path: 'unauthorized',
-        lazy: async () => ({
-          Component: (await import('./routes/unauthorized')).default,
-        }),
-      },
-      {
-        path: '*',
-        lazy: async () => ({
-          Component: (await import('./routes/[...slug]')).default,
-        }),
-      },
+      { path: 'extra', lazy: async () => ({ Component: (await import('./routes/extra')).default }) },
+      { path: 'login', lazy: async () => ({ Component: (await import('./routes/login')).default }) },
+      { path: 'unauthorized', lazy: async () => ({ Component: (await import('./routes/unauthorized')).default }) },
+      { path: '*', lazy: async () => ({ Component: (await import('./routes/[...slug]')).default }) }
+      ],
+    }
     ],
   },
 ];
 
 export default routes;
+
+/**
+ * Union of every navigable route in this application.
+ * Auto-generated from src/routes/ — do not edit manually.
+ *
+ * @example
+ *   import type { AppRoute } from './routes';
+ *   const go = (to: AppRoute) => navigate(to);
+ */
+export type AppRoute =
+  | '/'
+  | '*'
+  | '/about'
+  | '/account'
+  | '/admin'
+  | '/admin/users'
+  | '/admin/users/:id'
+  | '/beta-features'
+  | '/billing'
+  | '/blog'
+  | '/blog/:slug'
+  | '/dashboard'
+  | '/dashboard/crash'
+  | '/dashboard/profile'
+  | '/dashboard/settings'
+  | '/dashboard/settings/account'
+  | '/dashboard/settings/security'
+  | '/extra'
+  | '/features'
+  | '/login'
+  | '/payment'
+  | '/pricing'
+  | '/unauthorized';

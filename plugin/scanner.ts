@@ -5,8 +5,11 @@ import type { RouteNode } from './types.js';
 /** File extensions recognised as route modules. */
 const ROUTE_EXTENSIONS = new Set(['.tsx', '.ts', '.jsx', '.js']);
 
-/** Special file names that are never turned into routes. */
-const SPECIAL_FILES = new Set(['layout', 'guard']);
+/**
+ * Special file names that are never turned into routes.
+ * They are consumed as metadata on the enclosing directory node instead.
+ */
+const SPECIAL_FILES = new Set(['layout', 'guard', 'error']);
 
 /**
  * Convert a file base name (no extension) into a URL path segment.
@@ -33,10 +36,19 @@ function fileNameToSegment(base: string): string {
 
 /**
  * Returns true when a directory name is a route group, e.g. `(users)`.
- * Group folders are stripped from the URL but can carry their own layout/guard.
+ * Group folders are stripped from the URL but can carry their own layout/guard/error.
  */
 function isGroupDir(name: string): boolean {
   return /^\(.+\)$/.test(name);
+}
+
+/**
+ * Returns true when a file base name or directory name starts with `_`.
+ * Such entries are completely ignored by the scanner — useful for co-locating
+ * utilities, hooks, or component folders alongside route files.
+ */
+function isPrivate(name: string): boolean {
+  return name.startsWith('_');
 }
 
 /**
@@ -89,12 +101,13 @@ function scanDirectory(dir: string, srcDir: string): RouteNode[] {
 
   let layoutFile: string | null = null;
   let guardFile: string | null = null;
+  let errorFile: string | null = null;
   const fileNodes: RouteNode[] = [];
   const subDirs: fs.Dirent[] = [];
 
   for (const entry of entries) {
     if (entry.isDirectory()) {
-      subDirs.push(entry);
+      if (!isPrivate(entry.name)) subDirs.push(entry);
       continue;
     }
 
@@ -104,8 +117,14 @@ function scanDirectory(dir: string, srcDir: string): RouteNode[] {
     if (!ROUTE_EXTENSIONS.has(ext)) continue;
 
     const base = path.basename(entry.name, ext);
+
+    // Skip _private files
+    if (isPrivate(base)) continue;
+
     const absolutePath = path.join(dir, entry.name);
-    const relativePath = path.relative(srcDir, absolutePath).replace(/\\/g, '/');
+    const relativePath = path
+      .relative(srcDir, absolutePath)
+      .replace(/\\/g, '/');
 
     if (base === 'layout') {
       layoutFile = relativePath;
@@ -114,6 +133,11 @@ function scanDirectory(dir: string, srcDir: string): RouteNode[] {
 
     if (base === 'guard') {
       guardFile = relativePath;
+      continue;
+    }
+
+    if (base === 'error') {
+      errorFile = relativePath;
       continue;
     }
 
@@ -129,6 +153,7 @@ function scanDirectory(dir: string, srcDir: string): RouteNode[] {
       isCatchAll,
       layout: null,
       guard: null,
+      error: null,
       children: [],
     });
   }
@@ -143,27 +168,9 @@ function scanDirectory(dir: string, srcDir: string): RouteNode[] {
 
     if (children.length === 0) continue; // empty dir → skip
 
-    // Extract layout/guard from the children's parent metadata.
-    // We need to "promote" them from the children array to the dir node.
-    // But scanDirectory already handles this via the layout/guard vars above.
-    // For the subdirectory, we do a recursive call which returns child nodes
-    // including their own layout/guard already set on those nodes.
-    // We need a different approach: scan the subdirectory and extract its
-    // layout/guard to attach to the *directory node*, not the child nodes.
-
     const subDirNode = buildDirectoryNode(subDir.name, subDirPath, srcDir);
     if (subDirNode) dirNodes.push(subDirNode);
   }
-
-  // ── Attach layout/guard to all nodes at this level ──────────────────────────
-  // The layout and guard belong to the *directory level*, not individual files.
-  // We return the file nodes + dir nodes, and the *caller* of scanDirectory
-  // will attach layout/guard to them. But actually, layout/guard should be on
-  // the *enclosing* directory's RouteNode so the generator can wrap children.
-  //
-  // Strategy: return all route nodes from this directory.
-  // The parent's directory node will hold layout/guard.
-  // We annotate each returned node set via a wrapper object.
 
   const allNodes = [...fileNodes, ...dirNodes];
 
@@ -186,17 +193,23 @@ function scanDirectory(dir: string, srcDir: string): RouteNode[] {
  * @param isGroup - When true the directory is a route group `(name)`: its name
  *                  is stripped from the URL and the node gets segment `''`.
  */
-function buildDirectoryNode(dirName: string, dirPath: string, srcDir: string, isGroup = false): RouteNode | null {
+function buildDirectoryNode(
+  dirName: string,
+  dirPath: string,
+  srcDir: string,
+  isGroup = false,
+): RouteNode | null {
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
 
   let layoutFile: string | null = null;
   let guardFile: string | null = null;
+  let errorFile: string | null = null;
   const fileNodes: RouteNode[] = [];
   const subDirs: fs.Dirent[] = [];
 
   for (const entry of entries) {
     if (entry.isDirectory()) {
-      subDirs.push(entry);
+      if (!isPrivate(entry.name)) subDirs.push(entry);
       continue;
     }
 
@@ -206,8 +219,14 @@ function buildDirectoryNode(dirName: string, dirPath: string, srcDir: string, is
     if (!ROUTE_EXTENSIONS.has(ext)) continue;
 
     const base = path.basename(entry.name, ext);
+
+    // Skip _private files
+    if (isPrivate(base)) continue;
+
     const absolutePath = path.join(dirPath, entry.name);
-    const relativePath = path.relative(srcDir, absolutePath).replace(/\\/g, '/');
+    const relativePath = path
+      .relative(srcDir, absolutePath)
+      .replace(/\\/g, '/');
 
     if (base === 'layout') {
       layoutFile = relativePath;
@@ -216,6 +235,11 @@ function buildDirectoryNode(dirName: string, dirPath: string, srcDir: string, is
 
     if (base === 'guard') {
       guardFile = relativePath;
+      continue;
+    }
+
+    if (base === 'error') {
+      errorFile = relativePath;
       continue;
     }
 
@@ -231,6 +255,7 @@ function buildDirectoryNode(dirName: string, dirPath: string, srcDir: string, is
       isCatchAll,
       layout: null,
       guard: null,
+      error: null,
       children: [],
     });
   }
@@ -238,11 +263,17 @@ function buildDirectoryNode(dirName: string, dirPath: string, srcDir: string, is
   // Recurse into sub-directories
   for (const subDir of subDirs) {
     const subDirPath = path.join(dirPath, subDir.name);
-    const subDirNode = buildDirectoryNode(subDir.name, subDirPath, srcDir, isGroupDir(subDir.name));
+    const subDirNode = buildDirectoryNode(
+      subDir.name,
+      subDirPath,
+      srcDir,
+      isGroupDir(subDir.name),
+    );
     if (subDirNode) fileNodes.push(subDirNode);
   }
 
-  if (fileNodes.length === 0 && !layoutFile && !guardFile) return null;
+  if (fileNodes.length === 0 && !layoutFile && !guardFile && !errorFile)
+    return null;
 
   // Sort: index first, then statics, then dynamics, catch-all last
   fileNodes.sort((a, b) => {
@@ -270,6 +301,7 @@ function buildDirectoryNode(dirName: string, dirPath: string, srcDir: string, is
     isCatchAll,
     layout: layoutFile,
     guard: guardFile,
+    error: errorFile,
     children: fileNodes,
   };
 }
@@ -285,12 +317,19 @@ export function scan(routesDir: string, srcDir: string): RouteNode {
 
   let layoutFile: string | null = null;
   let guardFile: string | null = null;
+  let errorFile: string | null = null;
   const children: RouteNode[] = [];
 
   for (const entry of entries) {
     if (entry.isDirectory()) {
+      if (isPrivate(entry.name)) continue;
       const subDirPath = path.join(routesDir, entry.name);
-      const subDirNode = buildDirectoryNode(entry.name, subDirPath, srcDir, isGroupDir(entry.name));
+      const subDirNode = buildDirectoryNode(
+        entry.name,
+        subDirPath,
+        srcDir,
+        isGroupDir(entry.name),
+      );
       if (subDirNode) children.push(subDirNode);
       continue;
     }
@@ -301,8 +340,14 @@ export function scan(routesDir: string, srcDir: string): RouteNode {
     if (!ROUTE_EXTENSIONS.has(ext)) continue;
 
     const base = path.basename(entry.name, ext);
+
+    // Skip _private files
+    if (isPrivate(base)) continue;
+
     const absolutePath = path.join(routesDir, entry.name);
-    const relativePath = path.relative(srcDir, absolutePath).replace(/\\/g, '/');
+    const relativePath = path
+      .relative(srcDir, absolutePath)
+      .replace(/\\/g, '/');
 
     if (base === 'layout') {
       layoutFile = relativePath;
@@ -311,6 +356,11 @@ export function scan(routesDir: string, srcDir: string): RouteNode {
 
     if (base === 'guard') {
       guardFile = relativePath;
+      continue;
+    }
+
+    if (base === 'error') {
+      errorFile = relativePath;
       continue;
     }
 
@@ -326,6 +376,7 @@ export function scan(routesDir: string, srcDir: string): RouteNode {
       isCatchAll,
       layout: null,
       guard: null,
+      error: null,
       children: [],
     });
   }
@@ -352,6 +403,7 @@ export function scan(routesDir: string, srcDir: string): RouteNode {
     isCatchAll: false,
     layout: layoutFile,
     guard: guardFile,
+    error: errorFile,
     children,
   };
 }

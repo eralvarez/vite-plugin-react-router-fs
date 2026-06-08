@@ -31,6 +31,17 @@ function lazyComponent(filePath: string): string {
 }
 
 /**
+ * Generate the lazy() call for an error boundary file.
+ *
+ * Produces:
+ *   async () => ({ ErrorBoundary: (await import('<path>')).default })
+ */
+function lazyErrorBoundary(filePath: string): string {
+  const imp = toImportPath(filePath);
+  return `async () => ({ ErrorBoundary: (await import('${imp}')).default })`;
+}
+
+/**
  * Indent every line of a multi-line string by `n` spaces.
  */
 function indent(code: string, n: number): string {
@@ -51,7 +62,14 @@ function generateNode(node: RouteNode, depth: number): string {
   const pad = '  '; // 2-space indent unit
 
   // ── Leaf route (has a filePath, no children) ─────────────────────────────
-  if (!node.isCatchAll && node.filePath && node.children.length === 0 && !node.layout && !node.guard) {
+  if (
+    !node.isCatchAll &&
+    node.filePath &&
+    node.children.length === 0 &&
+    !node.layout &&
+    !node.guard &&
+    !node.error
+  ) {
     if (node.isIndex) {
       return `{ index: true, lazy: ${lazyComponent(node.filePath)} }`;
     }
@@ -67,35 +85,45 @@ function generateNode(node: RouteNode, depth: number): string {
   // Build the innermost children array (actual routes)
   const childrenCode = generateChildren(node.children, depth + 1);
 
-  // Wrap with layout → guard (innermost = layout, outermost = guard)
+  // Wrap in order from innermost to outermost: layout → guard → error
   let wrappedChildren = childrenCode;
 
   if (node.layout) {
-    wrappedChildren = wrapWithPathlessRoute(node.layout, wrappedChildren, depth + 1);
+    wrappedChildren = wrapWithPathlessRoute(
+      node.layout,
+      wrappedChildren,
+      depth + 1,
+    );
   }
 
   if (node.guard) {
-    wrappedChildren = wrapWithPathlessRoute(node.guard, wrappedChildren, depth + 1);
+    wrappedChildren = wrapWithPathlessRoute(
+      node.guard,
+      wrappedChildren,
+      depth + 1,
+    );
+  }
+
+  // error is outermost — catches failures in guard, layout, and all routes
+  if (node.error) {
+    wrappedChildren = wrapWithErrorBoundary(
+      node.error,
+      wrappedChildren,
+      depth + 1,
+    );
   }
 
   // Root node AND group nodes share the same shape: segment === '', filePath ===
   // null, isIndex === false.  Both should dissolve into their (possibly
-  // guard/layout-wrapped) children — no enclosing { path } shell.
+  // error/guard/layout-wrapped) children — no enclosing { path } shell.
   // Note: the true root is processed in generate() directly and never reaches
   // generateNode(); this branch therefore only fires for group nodes.
   if (node.segment === '' && !node.filePath && !node.isIndex) {
-    // The root node's guard/layout are the outermost wrappers.
-    // wrappedChildren already contains them; return as-is.
     return wrappedChildren;
   }
 
   // Directory node with own filePath (index.tsx for this dir exists)
-  // e.g. blog/index.tsx: the index route lives inside the children of the path node.
-  const pathAttr = node.isIndex ? 'index: true' : `path: '${node.segment}'`;
-
   if (node.filePath && node.isIndex) {
-    // This is an index file — emit as index route with lazy, children handled separately
-    // Actually index nodes with children don't typically exist; skip.
     return `{ index: true, lazy: ${lazyComponent(node.filePath)} }`;
   }
 
@@ -119,11 +147,40 @@ function generateNode(node: RouteNode, depth: number): string {
  *     children: [ <wrappedChildren> ],
  *   }
  */
-function wrapWithPathlessRoute(filePath: string, childrenCode: string, depth: number): string {
+function wrapWithPathlessRoute(
+  filePath: string,
+  childrenCode: string,
+  depth: number,
+): string {
   const pad = '  ';
   return [
     '{',
     `${pad}lazy: ${lazyComponent(filePath)},`,
+    `${pad}children: [`,
+    indent(childrenCode, 2),
+    `${pad}],`,
+    '}',
+  ].join('\n');
+}
+
+/**
+ * Wrap a children code string inside a pathless error boundary route.
+ *
+ * Produces:
+ *   {
+ *     lazy: async () => ({ ErrorBoundary: (await import('<path>')).default }),
+ *     children: [ <wrappedChildren> ],
+ *   }
+ */
+function wrapWithErrorBoundary(
+  filePath: string,
+  childrenCode: string,
+  depth: number,
+): string {
+  const pad = '  ';
+  return [
+    '{',
+    `${pad}lazy: ${lazyErrorBoundary(filePath)},`,
     `${pad}children: [`,
     indent(childrenCode, 2),
     `${pad}],`,
@@ -138,6 +195,64 @@ function generateChildren(nodes: RouteNode[], depth: number): string {
   return nodes.map((n) => generateNode(n, depth)).join(',\n');
 }
 
+// ── AppRoute type generation ────────────────────────────────────────────────
+
+/**
+ * Build a full path string from a parent path and a segment.
+ */
+function joinPath(parent: string, segment: string): string {
+  if (segment === '*') return '*';
+  if (segment === '') return parent; // index route or group node
+  return `${parent}/${segment}`;
+}
+
+/**
+ * Walk the route tree and collect every navigable URL path.
+ * Group nodes (segment === '', filePath === null) are dissolved transparently.
+ */
+function collectPaths(node: RouteNode, parentPath: string): string[] {
+  const paths: string[] = [];
+
+  // Catch-all
+  if (node.isCatchAll && node.filePath) {
+    paths.push('*');
+    return paths;
+  }
+
+  const nodePath = joinPath(parentPath, node.segment);
+
+  // Route file → emit its path
+  if (node.filePath !== null) {
+    const routePath = nodePath === '' ? '/' : nodePath;
+    paths.push(routePath);
+  }
+
+  // Recurse into children
+  for (const child of node.children) {
+    paths.push(...collectPaths(child, nodePath));
+  }
+
+  return paths;
+}
+
+/**
+ * Collect all unique navigable paths from the root node.
+ */
+function collectAllPaths(root: RouteNode): string[] {
+  const raw: string[] = [];
+  for (const child of root.children) {
+    raw.push(...collectPaths(child, ''));
+  }
+  // Root-level index route (if any) would produce '' → normalise to '/'
+  const normalised = raw.map((p) => (p === '' ? '/' : p));
+  return [...new Set(normalised)].sort((a, b) => {
+    // Keep '/' first, then alphabetical
+    if (a === '/') return -1;
+    if (b === '/') return 1;
+    return a.localeCompare(b);
+  });
+}
+
 /**
  * Generate the full `src/routes.ts` file content from a root RouteNode.
  *
@@ -146,7 +261,7 @@ function generateChildren(nodes: RouteNode[], depth: number): string {
 export function generate(root: RouteNode): string {
   // The root node represents src/routes/ itself.
   // Its children are the top-level routes.
-  // Its guard/layout wrap everything.
+  // Wrapping order (innermost → outermost): layout → guard → error
 
   let innerChildren = generateChildren(root.children, 1);
 
@@ -155,18 +270,36 @@ export function generate(root: RouteNode): string {
     innerChildren = wrapWithPathlessRoute(root.layout, innerChildren, 1);
   }
 
-  // Wrap with guard (outer)
+  // Wrap with guard
   if (root.guard) {
     innerChildren = wrapWithPathlessRoute(root.guard, innerChildren, 1);
+  }
+
+  // Wrap with error boundary (outermost — catches everything)
+  if (root.error) {
+    innerChildren = wrapWithErrorBoundary(root.error, innerChildren, 1);
   }
 
   // The top-level routes array
   const routesArray = `[\n${indent(innerChildren, 2)},\n]`;
 
+  // Collect all navigable paths for the AppRoute type
+  const allPaths = collectAllPaths(root);
+  const routeUnion = allPaths.map((p) => `'${p}'`).join('\n  | ');
+
   return (
     BANNER +
     `import type { RouteObject } from 'react-router';\n\n` +
     `const routes: RouteObject[] = ${routesArray};\n\n` +
-    `export default routes;\n`
+    `export default routes;\n\n` +
+    `/**\n` +
+    ` * Union of every navigable route in this application.\n` +
+    ` * Auto-generated from src/routes/ — do not edit manually.\n` +
+    ` *\n` +
+    ` * @example\n` +
+    ` *   import type { AppRoute } from './routes';\n` +
+    ` *   const go = (to: AppRoute) => navigate(to);\n` +
+    ` */\n` +
+    `export type AppRoute =\n  | ${routeUnion};\n`
   );
 }

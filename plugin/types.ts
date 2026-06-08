@@ -43,6 +43,15 @@ export interface RouteNode {
    */
   guard: string | null;
 
+  /**
+   * Path to the error.tsx for this directory level, relative to `src/`.
+   * When present the scanner emits a pathless ErrorBoundary wrapper that is
+   * outermost among error/guard/layout — it catches errors from the guard,
+   * layout, and all descendant routes.
+   * Null if no error.tsx exists at this level.
+   */
+  error: string | null;
+
   /** Child route nodes (routes inside sub-directories or sibling files). */
   children: RouteNode[];
 }
