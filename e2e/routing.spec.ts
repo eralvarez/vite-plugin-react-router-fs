@@ -11,9 +11,7 @@ test.describe('Basic route resolution', () => {
   test('/ renders the home page', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByTestId('page-home')).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: 'Welcome Home' }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome Home' })).toBeVisible();
   });
 
   test('/about renders the about page', async ({ page }) => {
@@ -25,9 +23,7 @@ test.describe('Basic route resolution', () => {
   test('/blog renders the blog index page', async ({ page }) => {
     await page.goto('/blog');
     await expect(page.getByTestId('page-blog-index')).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: 'Blog Posts' }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Blog Posts' })).toBeVisible();
   });
 
   test('/login renders the login page', async ({ page }) => {
@@ -51,9 +47,7 @@ test.describe('Basic route resolution', () => {
     await expect(page.getByTestId('page-not-found')).toBeVisible();
   });
 
-  test('client-side navigation from / to /about does not full-reload', async ({
-    page,
-  }) => {
+  test('client-side navigation from / to /about does not full-reload', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByTestId('page-home')).toBeVisible();
 
@@ -71,15 +65,10 @@ test.describe('Basic route resolution', () => {
     expect(page.url()).toContain('/about');
   });
 
-  test('client-side navigation from / to /blog via nav link', async ({
-    page,
-  }) => {
+  test('client-side navigation from / to /blog via nav link', async ({ page }) => {
     await page.goto('/');
     // Use the nav link in the root layout header (there may be multiple Blog links on the page)
-    await page
-      .getByTestId('root-layout-header')
-      .getByRole('link', { name: 'Blog' })
-      .click();
+    await page.getByTestId('root-layout-header').getByRole('link', { name: 'Blog' }).click();
     await expect(page.getByTestId('page-blog-index')).toBeVisible();
     expect(page.url()).toContain('/blog');
   });

@@ -32,6 +32,51 @@ function fileNameToSegment(base: string): string {
 }
 
 /**
+ * Returns true when a directory name is a route group, e.g. `(users)`.
+ * Group folders are stripped from the URL but can carry their own layout/guard.
+ */
+function isGroupDir(name: string): boolean {
+  return /^\(.+\)$/.test(name);
+}
+
+/**
+ * Recursively flatten group nodes (segment === '', filePath === null,
+ * isIndex === false) into their effective children.
+ * Used for duplicate-segment detection.
+ */
+function collectEffectiveNodes(nodes: RouteNode[]): RouteNode[] {
+  const result: RouteNode[] = [];
+  for (const node of nodes) {
+    if (node.segment === '' && node.filePath === null && !node.isIndex) {
+      result.push(...collectEffectiveNodes(node.children));
+    } else {
+      result.push(node);
+    }
+  }
+  return result;
+}
+
+/**
+ * Emit a console warning when two sibling nodes resolve to the same URL
+ * segment at the same directory level.
+ */
+function checkDuplicateSegments(nodes: RouteNode[], context: string): void {
+  const effective = collectEffectiveNodes(nodes);
+  const seen = new Set<string>();
+  for (const node of effective) {
+    const key = node.isIndex ? '__index__' : node.segment;
+    if (seen.has(key)) {
+      console.warn(
+        `[file-based-routing] Duplicate segment "${node.isIndex ? '(index)' : node.segment}" in ${context}. ` +
+          'Multiple routes resolve to the same URL — only the first match will be used.',
+      );
+    } else {
+      seen.add(key);
+    }
+  }
+}
+
+/**
  * Scan a single directory level and build the immediate RouteNode list.
  *
  * @param dir       - Absolute path to the directory being scanned.
@@ -60,9 +105,7 @@ function scanDirectory(dir: string, srcDir: string): RouteNode[] {
 
     const base = path.basename(entry.name, ext);
     const absolutePath = path.join(dir, entry.name);
-    const relativePath = path
-      .relative(srcDir, absolutePath)
-      .replace(/\\/g, '/');
+    const relativePath = path.relative(srcDir, absolutePath).replace(/\\/g, '/');
 
     if (base === 'layout') {
       layoutFile = relativePath;
@@ -139,12 +182,11 @@ function scanDirectory(dir: string, srcDir: string): RouteNode[] {
 /**
  * Build a RouteNode for a sub-directory.
  * Returns null if the directory has no scannable content.
+ *
+ * @param isGroup - When true the directory is a route group `(name)`: its name
+ *                  is stripped from the URL and the node gets segment `''`.
  */
-function buildDirectoryNode(
-  dirName: string,
-  dirPath: string,
-  srcDir: string,
-): RouteNode | null {
+function buildDirectoryNode(dirName: string, dirPath: string, srcDir: string, isGroup = false): RouteNode | null {
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
 
   let layoutFile: string | null = null;
@@ -165,9 +207,7 @@ function buildDirectoryNode(
 
     const base = path.basename(entry.name, ext);
     const absolutePath = path.join(dirPath, entry.name);
-    const relativePath = path
-      .relative(srcDir, absolutePath)
-      .replace(/\\/g, '/');
+    const relativePath = path.relative(srcDir, absolutePath).replace(/\\/g, '/');
 
     if (base === 'layout') {
       layoutFile = relativePath;
@@ -198,7 +238,7 @@ function buildDirectoryNode(
   // Recurse into sub-directories
   for (const subDir of subDirs) {
     const subDirPath = path.join(dirPath, subDir.name);
-    const subDirNode = buildDirectoryNode(subDir.name, subDirPath, srcDir);
+    const subDirNode = buildDirectoryNode(subDir.name, subDirPath, srcDir, isGroupDir(subDir.name));
     if (subDirNode) fileNodes.push(subDirNode);
   }
 
@@ -215,14 +255,19 @@ function buildDirectoryNode(
     return a.segment.localeCompare(b.segment);
   });
 
-  const segment = dirName; // directory name is the URL segment (no transformation)
+  checkDuplicateSegments(fileNodes, dirPath);
+
+  // Group dirs contribute no URL segment; dynamic/catch-all flags are n/a.
+  const segment = isGroup ? '' : dirName;
+  const isDynamic = !isGroup && /^\[(?!\.\.\.)(.+)\]$/.test(dirName);
+  const isCatchAll = !isGroup && /^\[\.\.\.(.+)\]$/.test(dirName);
 
   return {
     segment,
     filePath: null, // directory node has no own route file
     isIndex: false,
-    isDynamic: /^\[(?!\.\.\.)(.+)\]$/.test(dirName),
-    isCatchAll: /^\[\.\.\.(.+)\]$/.test(dirName),
+    isDynamic,
+    isCatchAll,
     layout: layoutFile,
     guard: guardFile,
     children: fileNodes,
@@ -245,7 +290,7 @@ export function scan(routesDir: string, srcDir: string): RouteNode {
   for (const entry of entries) {
     if (entry.isDirectory()) {
       const subDirPath = path.join(routesDir, entry.name);
-      const subDirNode = buildDirectoryNode(entry.name, subDirPath, srcDir);
+      const subDirNode = buildDirectoryNode(entry.name, subDirPath, srcDir, isGroupDir(entry.name));
       if (subDirNode) children.push(subDirNode);
       continue;
     }
@@ -257,9 +302,7 @@ export function scan(routesDir: string, srcDir: string): RouteNode {
 
     const base = path.basename(entry.name, ext);
     const absolutePath = path.join(routesDir, entry.name);
-    const relativePath = path
-      .relative(srcDir, absolutePath)
-      .replace(/\\/g, '/');
+    const relativePath = path.relative(srcDir, absolutePath).replace(/\\/g, '/');
 
     if (base === 'layout') {
       layoutFile = relativePath;
@@ -297,6 +340,8 @@ export function scan(routesDir: string, srcDir: string): RouteNode {
     if (!a.isDynamic && b.isDynamic) return -1;
     return a.segment.localeCompare(b.segment);
   });
+
+  checkDuplicateSegments(children, routesDir);
 
   // Root node — represents the src/routes/ directory itself
   return {

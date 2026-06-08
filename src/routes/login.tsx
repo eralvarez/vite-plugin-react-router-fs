@@ -6,13 +6,8 @@ export default function LoginPage() {
 
   return (
     <div data-testid="page-login">
-      <h1 className="mb-4 text-3xl font-bold text-yellow-400">
-        Login Required
-      </h1>
-      <p className="mb-4 text-slate-300">
-        The dashboard guard redirected you here because you are not
-        authenticated.
-      </p>
+      <h1 className="mb-4 text-3xl font-bold text-yellow-400">Login Required</h1>
+      <p className="mb-4 text-slate-300">The dashboard guard redirected you here because you are not authenticated.</p>
       <p className="mb-6 text-slate-400 text-sm">
         Redirect target: <code className="text-blue-300">{redirect}</code>
       </p>

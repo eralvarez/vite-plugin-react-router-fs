@@ -10,9 +10,11 @@ registration required.
 
 ```bash
 npm install
-npm run dev        # start dev server (auto-generates src/routes.ts)
+npm run dev        # start dev server on port 3000 (auto-generates src/routes.ts)
 npm run build      # production build
-npm run preview    # preview production build locally
+npm start          # serve dist/ on port 3000 (after build)
+npm run preview    # Vite preview server
+npm run format     # run Prettier across the whole project
 npm run test:e2e   # run Playwright e2e tests
 npm run typecheck  # TypeScript type check
 ```
@@ -93,6 +95,50 @@ export default function DashboardGuard() {
 
 ---
 
+## Route Groups
+
+A folder named `(name)` is a **route group**. The parentheses are stripped from
+the URL — routes inside the folder resolve as if the folder didn't exist — but the
+folder can still carry its own `layout.tsx` and `guard.tsx`.
+
+```
+src/routes/
+  (marketing)/
+    layout.tsx     ← wraps /pricing and /features only
+    pricing.tsx    → /pricing
+    features.tsx   → /features
+  (members)/
+    guard.tsx      ← protects /account and /billing
+    layout.tsx     ← wraps /account and /billing
+    account.tsx    → /account
+    billing.tsx    → /billing
+  about.tsx        → /about  (no group, no group layout/guard)
+```
+
+**Key properties:**
+
+- The group name never appears in any URL.
+- Groups can carry `layout.tsx`, `guard.tsx`, both, or neither.
+- Multiple groups at the same directory level are independent — each has its own
+  guard/layout scope, so the same URL level can have different protection rules.
+- Groups nest: `(shop)/(checkout)/payment.tsx` → `/payment`, with both `(shop)` and
+  `(checkout)` layouts stacking.
+- If two groups produce a route with the same URL segment, the plugin emits a
+  `console.warn` at build time and React Router matches the first one.
+
+```tsx
+// src/routes/(members)/guard.tsx
+import { Outlet, Navigate, useSearchParams } from 'react-router';
+
+export default function MembersGuard() {
+  const [searchParams] = useSearchParams();
+  const isMember = searchParams.get('member') === 'true';
+  return isMember ? <Outlet /> : <Navigate to="/login" replace />;
+}
+```
+
+---
+
 ## Dynamic Routes
 
 Wrap a path segment in square brackets to create a URL parameter:
@@ -162,7 +208,7 @@ project-root/
 │   ├── main.tsx         # Entry: createBrowserRouter + RouterProvider
 │   └── app.css          # Global styles (Tailwind)
 │
-├── e2e/                 # Playwright e2e tests (75 tests)
+├── e2e/                 # Playwright e2e tests (108 tests)
 ├── plans/               # Implementation plans
 ├── index.html           # SPA shell
 ├── vite.config.ts
@@ -185,6 +231,7 @@ The test suite covers:
 - **layouts.spec.ts** — root layout is omnipresent; section layouts scope correctly; nesting
 - **guards.spec.ts** — redirect without credentials; allow with credentials; guard independence; guard+layout composition
 - **dynamic.spec.ts** — param extraction for `:slug` and `:id`; catch-all behavior
+- **groups.spec.ts** — group URL resolution; layout scope isolation; guard block/allow; guard independence across groups; nested groups
 
 ---
 
@@ -194,8 +241,10 @@ The build output is a fully static SPA in `dist/`:
 
 ```bash
 npm run build
-# deploy dist/ to any static CDN (Cloudflare Pages, Vercel, S3, Netlify, etc.)
+npm start          # serve locally with 'serve' package on port 3000
+# or deploy dist/ to any static CDN (Cloudflare Pages, Vercel, S3, Netlify, etc.)
 ```
 
 For CDN deployments, configure all paths to serve `index.html` (client-side routing
-requires a catch-all rewrite rule).
+requires a catch-all rewrite rule). The `serve` package handles this automatically
+via its `--single` flag, which is already configured in `npm start`.

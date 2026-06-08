@@ -51,13 +51,7 @@ function generateNode(node: RouteNode, depth: number): string {
   const pad = '  '; // 2-space indent unit
 
   // ── Leaf route (has a filePath, no children) ─────────────────────────────
-  if (
-    !node.isCatchAll &&
-    node.filePath &&
-    node.children.length === 0 &&
-    !node.layout &&
-    !node.guard
-  ) {
+  if (!node.isCatchAll && node.filePath && node.children.length === 0 && !node.layout && !node.guard) {
     if (node.isIndex) {
       return `{ index: true, lazy: ${lazyComponent(node.filePath)} }`;
     }
@@ -77,23 +71,18 @@ function generateNode(node: RouteNode, depth: number): string {
   let wrappedChildren = childrenCode;
 
   if (node.layout) {
-    wrappedChildren = wrapWithPathlessRoute(
-      node.layout,
-      wrappedChildren,
-      depth + 1,
-    );
+    wrappedChildren = wrapWithPathlessRoute(node.layout, wrappedChildren, depth + 1);
   }
 
   if (node.guard) {
-    wrappedChildren = wrapWithPathlessRoute(
-      node.guard,
-      wrappedChildren,
-      depth + 1,
-    );
+    wrappedChildren = wrapWithPathlessRoute(node.guard, wrappedChildren, depth + 1);
   }
 
-  // Root node (segment === '' and isIndex === false and filePath === null)
-  // → just emit the wrapper(s) directly, no enclosing { path } shell
+  // Root node AND group nodes share the same shape: segment === '', filePath ===
+  // null, isIndex === false.  Both should dissolve into their (possibly
+  // guard/layout-wrapped) children — no enclosing { path } shell.
+  // Note: the true root is processed in generate() directly and never reaches
+  // generateNode(); this branch therefore only fires for group nodes.
   if (node.segment === '' && !node.filePath && !node.isIndex) {
     // The root node's guard/layout are the outermost wrappers.
     // wrappedChildren already contains them; return as-is.
@@ -130,11 +119,7 @@ function generateNode(node: RouteNode, depth: number): string {
  *     children: [ <wrappedChildren> ],
  *   }
  */
-function wrapWithPathlessRoute(
-  filePath: string,
-  childrenCode: string,
-  depth: number,
-): string {
+function wrapWithPathlessRoute(filePath: string, childrenCode: string, depth: number): string {
   const pad = '  ';
   return [
     '{',

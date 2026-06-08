@@ -28,9 +28,7 @@ test.describe('/blog/:slug — dynamic route', () => {
     await expect(page.getByTestId('blog-slug')).toHaveText('hello-world');
   });
 
-  test('/blog/any-random-slug renders with the provided slug', async ({
-    page,
-  }) => {
+  test('/blog/any-random-slug renders with the provided slug', async ({ page }) => {
     await page.goto('/blog/any-random-slug');
     await expect(page.getByTestId('page-blog-post')).toBeVisible();
     await expect(page.getByTestId('blog-slug')).toHaveText('any-random-slug');
@@ -58,17 +56,13 @@ test.describe('/admin/users/:id — dynamic route (guarded)', () => {
     await expect(page.getByTestId('user-id')).toHaveText('#1');
   });
 
-  test('/admin/users/42 renders user id 42 when authorized', async ({
-    page,
-  }) => {
+  test('/admin/users/42 renders user id 42 when authorized', async ({ page }) => {
     await page.goto('/admin/users/42?role=admin');
     await expect(page.getByTestId('page-admin-user-detail')).toBeVisible();
     await expect(page.getByTestId('user-id')).toHaveText('#42');
   });
 
-  test('/admin/users/999 renders user id 999 when authorized', async ({
-    page,
-  }) => {
+  test('/admin/users/999 renders user id 999 when authorized', async ({ page }) => {
     await page.goto('/admin/users/999?role=admin');
     await expect(page.getByTestId('page-admin-user-detail')).toBeVisible();
     await expect(page.getByTestId('user-id')).toHaveText('#999');
@@ -80,9 +74,7 @@ test.describe('/admin/users/:id — dynamic route (guarded)', () => {
     await expect(page.getByTestId('page-admin-user-detail')).not.toBeVisible();
   });
 
-  test('admin layout wraps /admin/users/:id when authorized', async ({
-    page,
-  }) => {
+  test('admin layout wraps /admin/users/:id when authorized', async ({ page }) => {
     await page.goto('/admin/users/2?role=admin');
     await expect(page.getByTestId('admin-layout')).toBeVisible();
     await expect(page.getByTestId('page-admin-user-detail')).toBeVisible();

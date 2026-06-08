@@ -11,16 +11,10 @@ export default function AdminGuard() {
   const [searchParams] = useSearchParams();
 
   const isAdmin =
-    searchParams.get('role') === 'admin' ||
-    (typeof window !== 'undefined' && localStorage.getItem('role') === 'admin');
+    searchParams.get('role') === 'admin' || (typeof window !== 'undefined' && localStorage.getItem('role') === 'admin');
 
   if (!isAdmin) {
-    return (
-      <Navigate
-        to={`/unauthorized?from=${encodeURIComponent(window.location.pathname)}`}
-        replace
-      />
-    );
+    return <Navigate to={`/unauthorized?from=${encodeURIComponent(window.location.pathname)}`} replace />;
   }
 
   return <Outlet />;

@@ -3,9 +3,7 @@ import { useSearchParams } from 'react-router';
 
 export default function DashboardLayout() {
   const [searchParams] = useSearchParams();
-  const authParam = searchParams.get('auth')
-    ? `?auth=${searchParams.get('auth')}`
-    : '';
+  const authParam = searchParams.get('auth') ? `?auth=${searchParams.get('auth')}` : '';
 
   return (
     <div data-testid="dashboard-layout">
@@ -15,9 +13,7 @@ export default function DashboardLayout() {
           to={`/dashboard${authParam}`}
           end
           className={({ isActive }) =>
-            isActive
-              ? 'text-green-400 font-medium text-sm'
-              : 'text-slate-400 hover:text-slate-200 text-sm'
+            isActive ? 'text-green-400 font-medium text-sm' : 'text-slate-400 hover:text-slate-200 text-sm'
           }
         >
           Overview
@@ -25,9 +21,7 @@ export default function DashboardLayout() {
         <NavLink
           to={`/dashboard/profile${authParam}`}
           className={({ isActive }) =>
-            isActive
-              ? 'text-green-400 font-medium text-sm'
-              : 'text-slate-400 hover:text-slate-200 text-sm'
+            isActive ? 'text-green-400 font-medium text-sm' : 'text-slate-400 hover:text-slate-200 text-sm'
           }
         >
           Profile
@@ -35,9 +29,7 @@ export default function DashboardLayout() {
         <NavLink
           to={`/dashboard/settings${authParam}`}
           className={({ isActive }) =>
-            isActive
-              ? 'text-green-400 font-medium text-sm'
-              : 'text-slate-400 hover:text-slate-200 text-sm'
+            isActive ? 'text-green-400 font-medium text-sm' : 'text-slate-400 hover:text-slate-200 text-sm'
           }
         >
           Settings

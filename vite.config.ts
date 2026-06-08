@@ -4,9 +4,5 @@ import tailwindcss from '@tailwindcss/vite';
 import { fileBasedRouting } from './plugin/index.js';
 
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-    fileBasedRouting({ routesDir: 'src/routes', output: 'src/routes.ts' }),
-  ],
+  plugins: [react(), tailwindcss(), fileBasedRouting({ routesDir: 'src/routes', output: 'src/routes.ts' })],
 });

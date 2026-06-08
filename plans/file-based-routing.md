@@ -15,6 +15,7 @@ dev-server start, file change, and production build.
 - Access guard wrapping via `guard.tsx` (nestable, outermost-first)
 - Dynamic route segments via `[param].tsx` → `:param`
 - Catch-all routes via `[...slug].tsx` → `*`
+- Route groups via `(name)/` folders — URL-invisible, independently guarded/laid-out
 - SPA-only output (static CDN deployable, no SSR)
 - E2E coverage with Playwright for all plugin rules
 - Rich example routes to exercise every convention
@@ -43,7 +44,7 @@ dev-server start, file change, and production build.
 
 ---
 
-## Repository Structure (after migration)
+## Repository Structure
 
 ```
 project-root/
@@ -78,6 +79,23 @@ project-root/
 │   │   │   └── users/
 │   │   │       ├── index.tsx  # → /admin/users
 │   │   │       └── [id].tsx   # → /admin/users/:id
+│   │   ├── (marketing)/       # Group: layout only
+│   │   │   ├── layout.tsx     # Wraps /pricing and /features
+│   │   │   ├── pricing.tsx    # → /pricing
+│   │   │   └── features.tsx   # → /features
+│   │   ├── (members)/         # Group: guard + layout
+│   │   │   ├── guard.tsx      # ?member=true required
+│   │   │   ├── layout.tsx     # Wraps /account and /billing
+│   │   │   ├── account.tsx    # → /account
+│   │   │   └── billing.tsx    # → /billing
+│   │   ├── (beta)/            # Group: guard only
+│   │   │   ├── guard.tsx      # ?beta=true required
+│   │   │   └── beta-features.tsx # → /beta-features
+│   │   ├── (shop)/            # Nested group: outer layout
+│   │   │   ├── layout.tsx     # Wraps /payment
+│   │   │   └── (checkout)/    # Nested group: inner layout
+│   │   │       ├── layout.tsx # Also wraps /payment (stacks with shop layout)
+│   │   │       └── payment.tsx # → /payment
 │   │   └── [...slug].tsx      # → * (catch-all / 404)
 │   │
 │   ├── routes.ts              # AUTO-GENERATED — do not edit manually
@@ -88,7 +106,8 @@ project-root/
 │   ├── routing.spec.ts        # Basic route resolution
 │   ├── layouts.spec.ts        # Layout nesting
 │   ├── guards.spec.ts         # Guard behavior & composition
-│   └── dynamic.spec.ts        # Dynamic & catch-all routes
+│   ├── dynamic.spec.ts        # Dynamic & catch-all routes
+│   └── groups.spec.ts         # Route group URL resolution, layout scope, guards
 │
 ├── plans/
 │   └── file-based-routing.md  # This file
@@ -97,8 +116,9 @@ project-root/
 ├── vite.config.ts             # Registers Tailwind + local plugin
 ├── tsconfig.json              # Cleaned up paths (src alias)
 ├── package.json               # Scripts + dependencies
+├── .prettierrc                # Prettier config
 ├── README.md
-├── agents.md
+├── AGENTS.md
 └── context.md
 ```
 
@@ -114,10 +134,14 @@ project-root/
 | `[...slug].tsx` | Catch-all / wildcard → `/*`                  |
 | `layout.tsx`    | Layout wrapper — **not** a route itself      |
 | `guard.tsx`     | Guard wrapper — **not** a route itself       |
+| `(name)/`       | Route group — folder name stripped from URL  |
 
 - Files in nested directories extend their parent path.
   `src/routes/admin/users/[id].tsx` → `/admin/users/:id`
 - `layout.tsx` and `guard.tsx` are **never** registered as navigable routes.
+- Group folders `(name)` are transparent in the URL. Their contents appear at the
+  parent URL level. A group folder may contain `layout.tsx`, `guard.tsx`, route
+  files, subdirectories, or nested group folders. Groups can nest arbitrarily deep.
 - There is no underscore-prefix ignore convention (all `.tsx` files are routes except the two special names above).
 
 ---
@@ -128,7 +152,7 @@ project-root/
 
 ```ts
 export interface RouteNode {
-  segment: string; // URL path segment (empty string for index / root)
+  segment: string; // URL path segment (empty string for index, root, or group nodes)
   filePath: string | null; // relative path to route file (null for dir-only nodes)
   isIndex: boolean;
   isDynamic: boolean;
@@ -150,7 +174,23 @@ export interface RouteNode {
    - `[...slug].tsx` → creates a catch-all `RouteNode`
    - `[param].tsx` → creates a dynamic `RouteNode`
    - Everything else → regular route `RouteNode`
-4. Return a `RouteNode[]` tree
+4. For subdirectories named `(name)`, build them as group nodes:
+   - `segment: ''` (no URL contribution)
+   - `isDynamic: false`, `isCatchAll: false`
+   - Own `layout` / `guard` if present
+   - Group nodes are nested inside the parent's `children` and handled by the
+     generator identically to the root node (dissolved into their children)
+5. After building each directory's children array, call `checkDuplicateSegments` to
+   warn when two routes at the same level resolve to the same URL segment
+6. Return a `RouteNode[]` tree
+
+**Scanner helpers:**
+
+| Helper                                   | Purpose                                           |
+| ---------------------------------------- | ------------------------------------------------- |
+| `isGroupDir(name)`                       | Returns true for `(name)` folders                 |
+| `collectEffectiveNodes(nodes)`           | Flattens group nodes for duplicate-segment checks |
+| `checkDuplicateSegments(nodes, context)` | Emits `console.warn` on URL collisions            |
 
 ### `generator.ts` — responsibilities
 
@@ -175,7 +215,10 @@ export default routes;
    ```
    guard route (pathless) → layout route (pathless) → actual route children
    ```
-5. All imports are lazy (`lazy: async () => ({ Component: ... })`) for automatic code splitting
+5. Nodes with `segment === '' && filePath === null && !isIndex` (root node and group
+   nodes) are dissolved: the generator returns their guard/layout-wrapped children
+   directly, with no enclosing `{ path }` shell.
+6. All imports are lazy (`lazy: async () => ({ Component: ... })`) for automatic code splitting
 
 ### `index.ts` — Vite plugin hooks
 
@@ -190,200 +233,52 @@ export default routes;
 
 ## Generated `src/routes.ts` — Structure Example
 
-Given the example routes above, the generated file looks like:
+Given the example routes, the generated file structure for a group looks like:
 
 ```ts
-// AUTO-GENERATED — do not edit manually
-import type { RouteObject } from 'react-router';
-
-const routes: RouteObject[] = [
-  {
-    // Root layout wrapper (src/routes/layout.tsx)
-    lazy: async () => ({
-      Component: (await import('./routes/layout')).default,
-    }),
-    children: [
-      // /
-      {
-        index: true,
-        lazy: async () => ({
-          Component: (await import('./routes/index')).default,
-        }),
-      },
-      // /about
-      {
-        path: 'about',
-        lazy: async () => ({
-          Component: (await import('./routes/about')).default,
-        }),
-      },
-
-      // /blog — has its own layout, no guard
-      {
-        path: 'blog',
-        children: [
-          {
-            lazy: async () => ({
-              Component: (await import('./routes/blog/layout')).default,
-            }),
-            children: [
-              {
-                index: true,
-                lazy: async () => ({
-                  Component: (await import('./routes/blog/index')).default,
-                }),
-              },
-              {
-                path: ':slug',
-                lazy: async () => ({
-                  Component: (await import('./routes/blog/[slug]')).default,
-                }),
-              },
-            ],
-          },
-        ],
-      },
-
-      // /dashboard — has guard + layout
-      {
-        path: 'dashboard',
-        children: [
-          {
-            // guard (pathless)
-            lazy: async () => ({
-              Component: (await import('./routes/dashboard/guard')).default,
-            }),
-            children: [
-              {
-                // layout (pathless)
-                lazy: async () => ({
-                  Component: (await import('./routes/dashboard/layout'))
-                    .default,
-                }),
-                children: [
-                  {
-                    index: true,
-                    lazy: async () => ({
-                      Component: (await import('./routes/dashboard/index'))
-                        .default,
-                    }),
-                  },
-                  {
-                    path: 'profile',
-                    lazy: async () => ({
-                      Component: (await import('./routes/dashboard/profile'))
-                        .default,
-                    }),
-                  },
-                  {
-                    path: 'settings',
-                    children: [
-                      {
-                        index: true,
-                        lazy: async () => ({
-                          Component: (
-                            await import('./routes/dashboard/settings/index')
-                          ).default,
-                        }),
-                      },
-                      {
-                        path: 'account',
-                        lazy: async () => ({
-                          Component: (
-                            await import('./routes/dashboard/settings/account')
-                          ).default,
-                        }),
-                      },
-                      {
-                        path: 'security',
-                        lazy: async () => ({
-                          Component: (
-                            await import('./routes/dashboard/settings/security')
-                          ).default,
-                        }),
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-
-      // /admin — guard + layout; users/ is a nested path namespace
-      {
-        path: 'admin',
-        children: [
-          {
-            // guard (pathless)
-            lazy: async () => ({
-              Component: (await import('./routes/admin/guard')).default,
-            }),
-            children: [
-              {
-                // layout (pathless)
-                lazy: async () => ({
-                  Component: (await import('./routes/admin/layout')).default,
-                }),
-                children: [
-                  {
-                    index: true,
-                    lazy: async () => ({
-                      Component: (await import('./routes/admin/index')).default,
-                    }),
-                  },
-                  {
-                    path: 'users',
-                    children: [
-                      {
-                        index: true,
-                        lazy: async () => ({
-                          Component: (
-                            await import('./routes/admin/users/index')
-                          ).default,
-                        }),
-                      },
-                      {
-                        path: ':id',
-                        lazy: async () => ({
-                          Component: (await import('./routes/admin/users/[id]'))
-                            .default,
-                        }),
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-
-      // Catch-all /*
-      {
-        path: '*',
-        lazy: async () => ({
-          Component: (await import('./routes/[...slug]')).default,
-        }),
-      },
-    ],
-  },
-];
-
-export default routes;
+// (members)/ group with guard + layout — produces no { path } wrapper
+{
+  // guard (pathless)
+  lazy: async () => ({
+    Component: (await import('./routes/(members)/guard')).default,
+  }),
+  children: [
+    {
+      // layout (pathless)
+      lazy: async () => ({
+        Component: (await import('./routes/(members)/layout')).default,
+      }),
+      children: [
+        {
+          path: 'account',
+          lazy: async () => ({
+            Component: (await import('./routes/(members)/account')).default,
+          }),
+        },
+        {
+          path: 'billing',
+          lazy: async () => ({
+            Component: (await import('./routes/(members)/billing')).default,
+          }),
+        },
+      ],
+    },
+  ],
+},
 ```
+
+Note: the group folder name `(members)` never appears in any `path` field.
 
 **Key observations:**
 
 - No JSX in the generated file → pure `.ts`, no babel/SWC JSX transform needed
 - All components are lazy-loaded for code splitting
 - Ancestor guard/layout wrapping is achieved naturally via React Router's route nesting
-  (root layout wraps all children; admin guard wraps only admin children; etc.)
 - A directory with both guard + layout always nests guard → layout → children
 - A directory with only layout wraps layout → children
 - A directory with only guard wraps guard → children
 - A directory with neither is a plain path namespace `{ path, children }`
+- A group folder with neither guard nor layout dissolves entirely (children appear inline)
 
 ---
 
@@ -465,45 +360,23 @@ import tailwindcss from '@tailwindcss/vite';
 import { fileBasedRouting } from './plugin';
 
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-    fileBasedRouting({ routesDir: 'src/routes', output: 'src/routes.ts' }),
-  ],
+  plugins: [react(), tailwindcss(), fileBasedRouting({ routesDir: 'src/routes', output: 'src/routes.ts' })],
 });
 ```
 
 ---
 
-## Package Changes
-
-**Remove (SSR/framework mode only):**
-
-- `@react-router/node`
-- `@react-router/serve`
-- `@react-router/dev`
-- `react-router.config.ts`
-
-**Add:**
-
-- `@vitejs/plugin-react` (basic React Vite plugin)
-- `@playwright/test` (e2e tests)
-
-**Keep:**
-
-- `react`, `react-dom`, `react-router`
-- `tailwindcss`, `@tailwindcss/vite`
-- `typescript`, `vite`
-
-**`package.json` scripts:**
+## `package.json` scripts
 
 ```json
 {
-  "dev": "vite",
+  "dev": "vite --port 3000",
   "build": "vite build",
   "preview": "vite preview",
-  "test:e2e": "playwright test",
-  "typecheck": "tsc --noEmit"
+  "start": "serve dist -s -p 3000",
+  "format": "prettier --write .",
+  "typecheck": "tsc --noEmit",
+  "test:e2e": "playwright test"
 }
 ```
 
@@ -529,37 +402,26 @@ export default defineConfig({
 
 ### `e2e/guards.spec.ts` — Guard behavior
 
-- Navigating to `/dashboard` without auth → redirected (e.g., to `/login` or shows redirect message)
-- Navigating to `/dashboard` with auth flag set → guard allows through, renders dashboard
-- Navigating to `/admin` without admin role → redirected
-- Navigating to `/admin` with admin role → renders admin page
-- Both root guard (if present) and admin guard apply on admin routes
+- Navigating to `/dashboard` without auth → redirected to `/login`
+- Navigating to `/dashboard` with `?auth=true` → guard allows through
+- Navigating to `/admin` without admin role → redirected to `/unauthorized`
+- Navigating to `/admin` with `?role=admin` → renders admin page
+- Guards compose correctly through directory nesting
 
 ### `e2e/dynamic.spec.ts` — Dynamic and catch-all routes
 
 - `/blog/my-post` renders blog post with slug `my-post`
-- `/blog/another-post` renders with slug `another-post`
-- `/admin/users` renders user list
 - `/admin/users/42` renders user with id `42`
-- `/admin/users/999` renders with id `999`
 - `/totally/unknown/path` hits catch-all route
 
----
+### `e2e/groups.spec.ts` — Route groups
 
-## Implementation Steps (ordered)
-
-1. **Dependency cleanup** — Remove SSR packages, add `@vitejs/plugin-react` and `@playwright/test`
-2. **Project skeleton** — Create `index.html`, `src/main.tsx`, `src/app.css`; remove `app/`; update `tsconfig.json`; update `vite.config.ts`
-3. **Plugin: `types.ts`** — Define `RouteNode` and related types
-4. **Plugin: `scanner.ts`** — Implement recursive directory scan and tree building
-5. **Plugin: `generator.ts`** — Implement code string generator from route tree
-6. **Plugin: `index.ts`** — Wire scanner + generator into Vite plugin hooks (buildStart, watchChange, handleHotUpdate)
-7. **Example routes** — Create all route files under `src/routes/` with meaningful UI content for testability
-8. **Wire up** — Import generated `src/routes.ts` in `main.tsx`, verify dev server works
-9. **Playwright setup** — `playwright.config.ts`, install browsers
-10. **Write e2e tests** — `e2e/routing.spec.ts`, `e2e/layouts.spec.ts`, `e2e/guards.spec.ts`, `e2e/dynamic.spec.ts`
-11. **Run tests and fix issues**
-12. **Documentation** — Update `README.md`, create `agents.md`, create `context.md`
+- **URL resolution**: group name absent from URL for all group types; nested groups strip both names
+- **Layout scope**: group layout visible only on group routes, not on sibling non-group routes
+- **Nested layouts**: `(shop)/(checkout)/payment.tsx` renders both shop and checkout layouts
+- **Guard block**: unauthenticated access to guarded group routes redirects correctly; layout never renders
+- **Guard allow**: correct credential grants access and shows layout
+- **Guard isolation**: one group's credential does not unlock another group's protected routes
 
 ---
 
@@ -570,6 +432,8 @@ will use a simple **URL search-param or localStorage flag** for testability:
 
 - `?auth=true` → authenticated (dashboard guard passes)
 - `?role=admin` → admin role (admin guard passes)
+- `?member=true` → member (members group guard passes)
+- `?beta=true` → beta tester (beta group guard passes)
 - Playwright tests set these params before navigating
 
 This avoids needing a real auth backend while still exercising the guard logic.

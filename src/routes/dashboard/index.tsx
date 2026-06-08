@@ -3,18 +3,13 @@ import { useSearchParams } from 'react-router';
 
 export default function DashboardIndex() {
   const [searchParams] = useSearchParams();
-  const authParam = searchParams.get('auth')
-    ? `?auth=${searchParams.get('auth')}`
-    : '';
+  const authParam = searchParams.get('auth') ? `?auth=${searchParams.get('auth')}` : '';
 
   return (
     <div data-testid="page-dashboard">
-      <h1 className="mb-4 text-3xl font-bold text-green-400">
-        Dashboard Overview
-      </h1>
+      <h1 className="mb-4 text-3xl font-bold text-green-400">Dashboard Overview</h1>
       <p className="mb-6 text-slate-300">
-        You are authenticated. Route:{' '}
-        <code className="text-blue-300">src/routes/dashboard/index.tsx</code>
+        You are authenticated. Route: <code className="text-blue-300">src/routes/dashboard/index.tsx</code>
       </p>
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">

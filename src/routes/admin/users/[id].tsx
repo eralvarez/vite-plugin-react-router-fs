@@ -11,16 +11,13 @@ const USERS: Record<string, { name: string; email: string; role: string }> = {
 export default function AdminUserDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
-  const roleParam = searchParams.get('role')
-    ? `?role=${searchParams.get('role')}`
-    : '';
+  const roleParam = searchParams.get('role') ? `?role=${searchParams.get('role')}` : '';
   const user = id ? USERS[id] : undefined;
 
   return (
     <div data-testid="page-admin-user-detail">
       <p className="mb-2 text-sm text-slate-400">
-        Dynamic route:{' '}
-        <code className="text-blue-300">src/routes/admin/users/[id].tsx</code>
+        Dynamic route: <code className="text-blue-300">src/routes/admin/users/[id].tsx</code>
       </p>
       <h1 className="mb-4 text-3xl font-bold text-red-400">
         User <span data-testid="user-id">#{id}</span>
@@ -39,9 +36,7 @@ export default function AdminUserDetail() {
             <div>
               <dt className="text-sm text-slate-400">Role</dt>
               <dd>
-                <span className="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300">
-                  {user.role}
-                </span>
+                <span className="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300">{user.role}</span>
               </dd>
             </div>
           </dl>
@@ -51,10 +46,7 @@ export default function AdminUserDetail() {
           No user found with ID <code className="text-red-300">{id}</code>.
         </p>
       )}
-      <Link
-        to={`/admin/users${roleParam}`}
-        className="mt-4 inline-block text-blue-400 underline"
-      >
+      <Link to={`/admin/users${roleParam}`} className="mt-4 inline-block text-blue-400 underline">
         Back to Users
       </Link>
     </div>

@@ -20,16 +20,13 @@ const USERS = [
 
 export default function AdminUsersIndex() {
   const [searchParams] = useSearchParams();
-  const roleParam = searchParams.get('role')
-    ? `?role=${searchParams.get('role')}`
-    : '';
+  const roleParam = searchParams.get('role') ? `?role=${searchParams.get('role')}` : '';
 
   return (
     <div data-testid="page-admin-users">
       <h1 className="mb-4 text-3xl font-bold text-red-400">User Management</h1>
       <p className="mb-6 text-slate-300">
-        Route:{' '}
-        <code className="text-blue-300">src/routes/admin/users/index.tsx</code>
+        Route: <code className="text-blue-300">src/routes/admin/users/index.tsx</code>
       </p>
       <table className="w-full text-left">
         <thead>
@@ -48,15 +45,10 @@ export default function AdminUsersIndex() {
               <td className="py-3 pr-4 text-white">{user.name}</td>
               <td className="py-3 pr-4 text-slate-300">{user.email}</td>
               <td className="py-3 pr-4">
-                <span className="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300">
-                  {user.role}
-                </span>
+                <span className="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300">{user.role}</span>
               </td>
               <td className="py-3">
-                <Link
-                  to={`/admin/users/${user.id}${roleParam}`}
-                  className="text-blue-400 hover:underline"
-                >
+                <Link to={`/admin/users/${user.id}${roleParam}`} className="text-blue-400 hover:underline">
                   View
                 </Link>
               </td>

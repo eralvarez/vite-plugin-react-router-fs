@@ -9,9 +9,7 @@ export default function BlogLayout() {
           to="/blog"
           end
           className={({ isActive }) =>
-            isActive
-              ? 'text-purple-400 font-medium text-sm'
-              : 'text-slate-400 hover:text-slate-200 text-sm'
+            isActive ? 'text-purple-400 font-medium text-sm' : 'text-slate-400 hover:text-slate-200 text-sm'
           }
         >
           All Posts
@@ -19,9 +17,7 @@ export default function BlogLayout() {
         <NavLink
           to="/blog/getting-started"
           className={({ isActive }) =>
-            isActive
-              ? 'text-purple-400 font-medium text-sm'
-              : 'text-slate-400 hover:text-slate-200 text-sm'
+            isActive ? 'text-purple-400 font-medium text-sm' : 'text-slate-400 hover:text-slate-200 text-sm'
           }
         >
           Getting Started
@@ -29,9 +25,7 @@ export default function BlogLayout() {
         <NavLink
           to="/blog/advanced-routing"
           className={({ isActive }) =>
-            isActive
-              ? 'text-purple-400 font-medium text-sm'
-              : 'text-slate-400 hover:text-slate-200 text-sm'
+            isActive ? 'text-purple-400 font-medium text-sm' : 'text-slate-400 hover:text-slate-200 text-sm'
           }
         >
           Advanced Routing

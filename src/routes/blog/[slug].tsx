@@ -6,8 +6,7 @@ export default function BlogPost() {
   return (
     <div data-testid="page-blog-post">
       <p className="mb-2 text-sm text-slate-400">
-        Dynamic route:{' '}
-        <code className="text-blue-300">src/routes/blog/[slug].tsx</code>
+        Dynamic route: <code className="text-blue-300">src/routes/blog/[slug].tsx</code>
       </p>
       <h1 className="mb-4 text-3xl font-bold text-purple-400">
         Post: <span data-testid="blog-slug">{slug}</span>

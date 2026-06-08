@@ -6,73 +6,244 @@ import type { RouteObject } from 'react-router';
 
 const routes: RouteObject[] = [
   {
-    lazy: async () => ({ Component: (await import('./routes/layout')).default }),
+    lazy: async () => ({
+      Component: (await import('./routes/layout')).default,
+    }),
     children: [
-    { index: true, lazy: async () => ({ Component: (await import('./routes/index')).default }) },
-    { path: 'about', lazy: async () => ({ Component: (await import('./routes/about')).default }) },
-    {
-      path: 'admin',
-      children: [
       {
-        lazy: async () => ({ Component: (await import('./routes/admin/guard')).default }),
+        index: true,
+        lazy: async () => ({
+          Component: (await import('./routes/index')).default,
+        }),
+      },
+      {
+        lazy: async () => ({
+          Component: (await import('./routes/(beta)/guard')).default,
+        }),
         children: [
-        {
-          lazy: async () => ({ Component: (await import('./routes/admin/layout')).default }),
-          children: [
-          { index: true, lazy: async () => ({ Component: (await import('./routes/admin/index')).default }) },
           {
-            path: 'users',
-            children: [
-            { index: true, lazy: async () => ({ Component: (await import('./routes/admin/users/index')).default }) },
-            { path: ':id', lazy: async () => ({ Component: (await import('./routes/admin/users/[id]')).default }) }
-            ],
-          }
-          ],
-        }
+            path: 'beta-features',
+            lazy: async () => ({
+              Component: (await import('./routes/(beta)/beta-features')).default,
+            }),
+          },
         ],
-      }
-      ],
-    },
-    {
-      path: 'blog',
-      children: [
+      },
       {
-        lazy: async () => ({ Component: (await import('./routes/blog/layout')).default }),
+        lazy: async () => ({
+          Component: (await import('./routes/(marketing)/layout')).default,
+        }),
         children: [
-        { index: true, lazy: async () => ({ Component: (await import('./routes/blog/index')).default }) },
-        { path: ':slug', lazy: async () => ({ Component: (await import('./routes/blog/[slug]')).default }) }
-        ],
-      }
-      ],
-    },
-    {
-      path: 'dashboard',
-      children: [
-      {
-        lazy: async () => ({ Component: (await import('./routes/dashboard/guard')).default }),
-        children: [
-        {
-          lazy: async () => ({ Component: (await import('./routes/dashboard/layout')).default }),
-          children: [
-          { index: true, lazy: async () => ({ Component: (await import('./routes/dashboard/index')).default }) },
-          { path: 'profile', lazy: async () => ({ Component: (await import('./routes/dashboard/profile')).default }) },
           {
-            path: 'settings',
-            children: [
-            { index: true, lazy: async () => ({ Component: (await import('./routes/dashboard/settings/index')).default }) },
-            { path: 'account', lazy: async () => ({ Component: (await import('./routes/dashboard/settings/account')).default }) },
-            { path: 'security', lazy: async () => ({ Component: (await import('./routes/dashboard/settings/security')).default }) }
-            ],
-          }
-          ],
-        }
+            path: 'features',
+            lazy: async () => ({
+              Component: (await import('./routes/(marketing)/features')).default,
+            }),
+          },
+          {
+            path: 'pricing',
+            lazy: async () => ({
+              Component: (await import('./routes/(marketing)/pricing')).default,
+            }),
+          },
         ],
-      }
-      ],
-    },
-    { path: 'login', lazy: async () => ({ Component: (await import('./routes/login')).default }) },
-    { path: 'unauthorized', lazy: async () => ({ Component: (await import('./routes/unauthorized')).default }) },
-    { path: '*', lazy: async () => ({ Component: (await import('./routes/[...slug]')).default }) }
+      },
+      {
+        lazy: async () => ({
+          Component: (await import('./routes/(members)/guard')).default,
+        }),
+        children: [
+          {
+            lazy: async () => ({
+              Component: (await import('./routes/(members)/layout')).default,
+            }),
+            children: [
+              {
+                path: 'account',
+                lazy: async () => ({
+                  Component: (await import('./routes/(members)/account')).default,
+                }),
+              },
+              {
+                path: 'billing',
+                lazy: async () => ({
+                  Component: (await import('./routes/(members)/billing')).default,
+                }),
+              },
+            ],
+          },
+        ],
+      },
+      {
+        lazy: async () => ({
+          Component: (await import('./routes/(shop)/layout')).default,
+        }),
+        children: [
+          {
+            lazy: async () => ({
+              Component: (await import('./routes/(shop)/(checkout)/layout')).default,
+            }),
+            children: [
+              {
+                path: 'payment',
+                lazy: async () => ({
+                  Component: (await import('./routes/(shop)/(checkout)/payment')).default,
+                }),
+              },
+            ],
+          },
+        ],
+      },
+      {
+        path: 'about',
+        lazy: async () => ({
+          Component: (await import('./routes/about')).default,
+        }),
+      },
+      {
+        path: 'admin',
+        children: [
+          {
+            lazy: async () => ({
+              Component: (await import('./routes/admin/guard')).default,
+            }),
+            children: [
+              {
+                lazy: async () => ({
+                  Component: (await import('./routes/admin/layout')).default,
+                }),
+                children: [
+                  {
+                    index: true,
+                    lazy: async () => ({
+                      Component: (await import('./routes/admin/index')).default,
+                    }),
+                  },
+                  {
+                    path: 'users',
+                    children: [
+                      {
+                        index: true,
+                        lazy: async () => ({
+                          Component: (await import('./routes/admin/users/index')).default,
+                        }),
+                      },
+                      {
+                        path: ':id',
+                        lazy: async () => ({
+                          Component: (await import('./routes/admin/users/[id]')).default,
+                        }),
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        path: 'blog',
+        children: [
+          {
+            lazy: async () => ({
+              Component: (await import('./routes/blog/layout')).default,
+            }),
+            children: [
+              {
+                index: true,
+                lazy: async () => ({
+                  Component: (await import('./routes/blog/index')).default,
+                }),
+              },
+              {
+                path: ':slug',
+                lazy: async () => ({
+                  Component: (await import('./routes/blog/[slug]')).default,
+                }),
+              },
+            ],
+          },
+        ],
+      },
+      {
+        path: 'dashboard',
+        children: [
+          {
+            lazy: async () => ({
+              Component: (await import('./routes/dashboard/guard')).default,
+            }),
+            children: [
+              {
+                lazy: async () => ({
+                  Component: (await import('./routes/dashboard/layout')).default,
+                }),
+                children: [
+                  {
+                    index: true,
+                    lazy: async () => ({
+                      Component: (await import('./routes/dashboard/index')).default,
+                    }),
+                  },
+                  {
+                    path: 'profile',
+                    lazy: async () => ({
+                      Component: (await import('./routes/dashboard/profile')).default,
+                    }),
+                  },
+                  {
+                    path: 'settings',
+                    children: [
+                      {
+                        index: true,
+                        lazy: async () => ({
+                          Component: (await import('./routes/dashboard/settings/index')).default,
+                        }),
+                      },
+                      {
+                        path: 'account',
+                        lazy: async () => ({
+                          Component: (await import('./routes/dashboard/settings/account')).default,
+                        }),
+                      },
+                      {
+                        path: 'security',
+                        lazy: async () => ({
+                          Component: (await import('./routes/dashboard/settings/security')).default,
+                        }),
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        path: 'extra',
+        lazy: async () => ({
+          Component: (await import('./routes/extra')).default,
+        }),
+      },
+      {
+        path: 'login',
+        lazy: async () => ({
+          Component: (await import('./routes/login')).default,
+        }),
+      },
+      {
+        path: 'unauthorized',
+        lazy: async () => ({
+          Component: (await import('./routes/unauthorized')).default,
+        }),
+      },
+      {
+        path: '*',
+        lazy: async () => ({
+          Component: (await import('./routes/[...slug]')).default,
+        }),
+      },
     ],
   },
 ];

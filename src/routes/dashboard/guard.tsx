@@ -8,19 +8,14 @@ import { Outlet, Navigate, useSearchParams } from 'react-router';
  * In a real app, replace this with your actual auth check (e.g. a context/hook).
  */
 export default function DashboardGuard() {
+  console.log('[DashboardGuard] Checking authentication');
   const [searchParams] = useSearchParams();
 
   const isAuthenticated =
-    searchParams.get('auth') === 'true' ||
-    (typeof window !== 'undefined' && localStorage.getItem('auth') === 'true');
+    searchParams.get('auth') === 'true' || (typeof window !== 'undefined' && localStorage.getItem('auth') === 'true');
 
   if (!isAuthenticated) {
-    return (
-      <Navigate
-        to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`}
-        replace
-      />
-    );
+    return <Navigate to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`} replace />;
   }
 
   return <Outlet />;

@@ -37,12 +37,25 @@ fileBasedRouting({ routesDir: 'src/routes', output: 'src/routes.ts' });
 
 The scanner returns a tree of `RouteNode` objects. Each node has:
 
-- `segment` — URL segment (`:param`, `*`, `''` for index, or plain name)
+- `segment` — URL segment (`:param`, `*`, `''` for index/root/group nodes, or plain name)
 - `filePath` — relative path to the component file (null for dir-only nodes)
 - `isIndex`, `isDynamic`, `isCatchAll` — classification flags
 - `layout` — path to `layout.tsx` at this directory level (or null)
 - `guard` — path to `guard.tsx` at this directory level (or null)
 - `children` — child `RouteNode[]`
+
+**Group nodes** (folders named `(name)`) have `segment: ''`, `filePath: null`,
+`isIndex: false` — the same shape as the root node. The generator treats them
+identically: it dissolves the node into its guard/layout-wrapped children with no
+enclosing `{ path }` shell.
+
+### Scanner Helpers
+
+| Helper                                   | Purpose                                                          |
+| ---------------------------------------- | ---------------------------------------------------------------- |
+| `isGroupDir(name)`                       | Returns true for `(name)` folders                                |
+| `collectEffectiveNodes(nodes)`           | Flattens group nodes for duplicate-segment detection             |
+| `checkDuplicateSegments(nodes, context)` | `console.warn` when two siblings resolve to the same URL segment |
 
 ### Generated File Format
 
@@ -54,13 +67,29 @@ The guard wraps the layout, which wraps the route children:
 guard (pathless) → layout (pathless) → route children
 ```
 
+Group folders produce no URL segment. Their guard/layout (if any) appear as pathless
+wrappers directly inside the parent's `children` array:
+
+```
+// (members)/ with guard + layout:
+{
+  lazy: MembersGuard,
+  children: [{
+    lazy: MembersLayout,
+    children: [ /* /account, /billing */ ]
+  }]
+}
+```
+
 No JSX in the generated file — pure TypeScript using dynamic `import()`.
 
 ---
 
 ## Application (`src/routes/`)
 
-17 route files demonstrating every convention:
+Route files demonstrating every convention:
+
+### Named-directory routes (17 files)
 
 | Path                           | File                              | Notes                            |
 | ------------------------------ | --------------------------------- | -------------------------------- |
@@ -80,29 +109,43 @@ No JSX in the generated file — pure TypeScript using dynamic `import()`.
 | `/unauthorized`                | `unauthorized.tsx`                | Admin guard redirect target      |
 | `*`                            | `[...slug].tsx`                   | Catch-all / 404                  |
 
+### Route group routes (8 files across 4 groups)
+
+| Path             | File                            | Notes                                |
+| ---------------- | ------------------------------- | ------------------------------------ |
+| `/pricing`       | `(marketing)/pricing.tsx`       | Layout only, no guard                |
+| `/features`      | `(marketing)/features.tsx`      | Same layout as /pricing              |
+| `/account`       | `(members)/account.tsx`         | Guard (`?member=true`) + layout      |
+| `/billing`       | `(members)/billing.tsx`         | Guard + layout                       |
+| `/beta-features` | `(beta)/beta-features.tsx`      | Guard only (`?beta=true`), no layout |
+| `/payment`       | `(shop)/(checkout)/payment.tsx` | Nested groups, both layouts stack    |
+
 ### Guard Testability
 
 Guards use URL search params for testability (no real auth backend needed):
 
 - `?auth=true` → dashboard guard passes
 - `?role=admin` → admin guard passes
+- `?member=true` → members group guard passes
+- `?beta=true` → beta group guard passes
 
 ---
 
 ## Test Suite (`e2e/`)
 
-75 Playwright tests across 4 files. Runs against a production preview build.
+108 Playwright tests across 5 files. Runs against a production preview build.
 
 ```bash
 npm run test:e2e
 ```
 
-| File              | What It Tests                                                             |
-| ----------------- | ------------------------------------------------------------------------- |
-| `routing.spec.ts` | Route resolution, client-side nav                                         |
-| `layouts.spec.ts` | Layout scope, nesting, isolation                                          |
-| `guards.spec.ts`  | Redirect without creds, allow with creds, guard independence, composition |
-| `dynamic.spec.ts` | Param extraction, catch-all                                               |
+| File              | What It Tests                                                                         |
+| ----------------- | ------------------------------------------------------------------------------------- |
+| `routing.spec.ts` | Route resolution, client-side nav                                                     |
+| `layouts.spec.ts` | Layout scope, nesting, isolation                                                      |
+| `guards.spec.ts`  | Redirect without creds, allow with creds, guard independence, composition             |
+| `dynamic.spec.ts` | Param extraction, catch-all                                                           |
+| `groups.spec.ts`  | Group URL resolution, layout scope, guard block/allow, guard isolation, nested groups |
 
 ### Test IDs Used
 
@@ -112,10 +155,18 @@ Components use `data-testid` attributes for reliable element selection:
 - `blog-layout` — blog section sub-nav
 - `dashboard-layout` — dashboard sub-nav
 - `admin-layout` — admin panel sub-nav
+- `marketing-layout` — (marketing) group layout
+- `group-members-layout` — (members) group layout
+- `group-shop-layout` — (shop) group layout
+- `group-checkout-layout` — (checkout) nested group layout
 - `page-home`, `page-about`, `page-blog-index`, `page-blog-post` — page roots
 - `page-dashboard`, `page-dashboard-profile`, `page-dashboard-settings-*` — dashboard pages
 - `page-admin`, `page-admin-users`, `page-admin-user-detail` — admin pages
 - `page-login`, `page-unauthorized`, `page-not-found` — redirect targets and 404
+- `page-pricing`, `page-features` — (marketing) group pages
+- `page-account`, `page-billing` — (members) group pages
+- `page-beta-features` — (beta) group page
+- `page-payment` — (shop)/(checkout) nested group page
 - `blog-slug` — contains the `:slug` param value
 - `user-id` — contains the `:id` param value
 
@@ -144,12 +195,43 @@ renders `<Outlet />`.
 Add `guard.tsx` to the directory. It must `export default` a React component that
 renders either `<Outlet />` (allow) or `<Navigate to="..." />` (block).
 
+### Add a route group
+
+Create a folder named `(name)` (parentheses required). Place route files and
+optionally `layout.tsx` / `guard.tsx` inside it. The folder name is never part of
+any URL.
+
+```
+src/routes/(marketing)/
+  layout.tsx     ← wraps only routes inside this group
+  pricing.tsx    → /pricing
+  features.tsx   → /features
+```
+
+Groups are useful for giving a set of co-located routes a shared layout or guard
+without affecting the URL structure, and for splitting routes at the same URL level
+into independently guarded sections.
+
 ### Change the routes directory
 
 Update the `routesDir` option in `vite.config.ts`:
 
 ```ts
 fileBasedRouting({ routesDir: 'src/pages', output: 'src/routes.ts' });
+```
+
+---
+
+## Scripts
+
+```bash
+npm run dev        # dev server on port 3000
+npm run build      # production build → dist/
+npm start          # serve dist/ with 'serve' package on port 3000 (SPA fallback enabled)
+npm run preview    # Vite preview server
+npm run format     # Prettier --write .
+npm run typecheck  # tsc --noEmit
+npm run test:e2e   # Playwright e2e suite (builds first)
 ```
 
 ---
@@ -163,3 +245,9 @@ fileBasedRouting({ routesDir: 'src/pages', output: 'src/routes.ts' });
 - **All lazy imports** — every route component is code-split automatically.
 - **Guard wraps layout** — ensures the layout shell never renders for blocked users.
 - **Static sorting** — index first, then static, then dynamic, catch-all last.
+- **Group nodes reuse `segment: ''`** — group folders produce a node with an empty
+  segment (same shape as the root node). The generator already dissolves such nodes
+  into their guard/layout-wrapped children, so no generator changes were needed.
+- **Duplicate-segment warning** — when two siblings (after group flattening) resolve
+  to the same URL segment, the scanner emits a `console.warn` at build/dev-start time
+  and continues; React Router will match the first declaration.

@@ -15,7 +15,7 @@ passed directly to `createBrowserRouter`. No SSR. Output is a static SPA deploya
 | Framework       | React 19 + React Router v7 (SPA / library mode) |
 | Build tool      | Vite v8                                         |
 | Styling         | Tailwind CSS v4                                 |
-| Testing         | Playwright (75 e2e tests)                       |
+| Testing         | Playwright (108 e2e tests)                      |
 | Language        | TypeScript 5                                    |
 | Entry point     | `index.html` → `src/main.tsx`                   |
 | Routes source   | `src/routes/`                                   |
@@ -47,6 +47,7 @@ The generated file contains no JSX. All components are lazy-imported.
 | `[...slug].tsx` | Catch-all wildcard → `*`                                            |
 | `layout.tsx`    | Layout wrapper (not a route) — renders `<Outlet />`                 |
 | `guard.tsx`     | Access guard (not a route) — renders `<Outlet />` or `<Navigate />` |
+| `(name)/`       | Route group folder — stripped from URL, can have layout/guard       |
 
 ---
 
@@ -56,6 +57,10 @@ The generated file contains no JSX. All components are lazy-imported.
   `routes/admin/layout.tsx` wraps only admin routes (inside root layout).
 - **Guards** nest outward to inward: root guard fires first, then section guard.
 - **Within a directory**: guard wraps layout wraps actual routes.
+- **Groups** (`(name)/` folders): the folder name is invisible in the URL. A group
+  may have its own `layout.tsx` and/or `guard.tsx` that wrap only the routes inside
+  the group. Multiple groups at the same level are fully independent — each has its
+  own guard/layout scope. Groups can be nested: `(outer)/(inner)/page.tsx` → `/page`.
 - **Sorting**: index first, static routes alphabetically, dynamic routes, catch-all last.
 
 ---
@@ -67,7 +72,7 @@ npm run test:e2e     # runs build + preview then Playwright
 ```
 
 - All tests run against the **production preview** (`vite preview` on port 4173)
-- Guards are tested via URL search params: `?auth=true` and `?role=admin`
+- Guards are tested via URL search params: `?auth=true`, `?role=admin`, `?member=true`, `?beta=true`
 - Every route has a `data-testid` on its root element for reliable Playwright selection
 
 ---
@@ -75,9 +80,11 @@ npm run test:e2e     # runs build + preview then Playwright
 ## Scripts
 
 ```bash
-npm run dev        # dev server (plugin runs + watches src/routes/)
+npm run dev        # dev server on port 3000 (plugin runs + watches src/routes/)
 npm run build      # production build (plugin runs once)
-npm run preview    # serve dist/ locally
+npm start          # serve dist/ with 'serve' package on port 3000 (SPA fallback)
+npm run preview    # Vite preview server
+npm run format     # Prettier --write .
 npm run typecheck  # tsc --noEmit
 npm run test:e2e   # Playwright e2e suite
 ```

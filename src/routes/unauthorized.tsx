@@ -8,8 +8,7 @@ export default function UnauthorizedPage() {
     <div data-testid="page-unauthorized">
       <h1 className="mb-4 text-3xl font-bold text-orange-400">Access Denied</h1>
       <p className="mb-4 text-slate-300">
-        The admin guard redirected you here because you do not have the required
-        role.
+        The admin guard redirected you here because you do not have the required role.
       </p>
       <p className="mb-6 text-slate-400 text-sm">
         Attempted path: <code className="text-blue-300">{from}</code>

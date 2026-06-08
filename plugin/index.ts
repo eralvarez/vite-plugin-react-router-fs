@@ -25,9 +25,7 @@ export function fileBasedRouting(options: PluginOptions): Plugin {
 
   function generateRoutes(): void {
     if (!fs.existsSync(absoluteRoutesDir)) {
-      console.warn(
-        `[file-based-routing] routes directory not found: ${absoluteRoutesDir}`,
-      );
+      console.warn(`[file-based-routing] routes directory not found: ${absoluteRoutesDir}`);
       return;
     }
 
@@ -45,9 +43,7 @@ export function fileBasedRouting(options: PluginOptions): Plugin {
     if (existing !== code) {
       fs.mkdirSync(path.dirname(absoluteOutput), { recursive: true });
       fs.writeFileSync(absoluteOutput, code, 'utf-8');
-      console.log(
-        `[file-based-routing] generated ${path.relative(resolvedRoot, absoluteOutput)}`,
-      );
+      console.log(`[file-based-routing] generated ${path.relative(resolvedRoot, absoluteOutput)}`);
     }
   }
 

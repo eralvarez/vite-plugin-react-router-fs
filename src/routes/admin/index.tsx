@@ -2,9 +2,7 @@ import { Link, useSearchParams } from 'react-router';
 
 export default function AdminIndex() {
   const [searchParams] = useSearchParams();
-  const roleParam = searchParams.get('role')
-    ? `?role=${searchParams.get('role')}`
-    : '';
+  const roleParam = searchParams.get('role') ? `?role=${searchParams.get('role')}` : '';
 
   return (
     <div data-testid="page-admin">
@@ -12,8 +10,7 @@ export default function AdminIndex() {
       <p className="mb-6 text-slate-300">
         Route: <code className="text-blue-300">src/routes/admin/index.tsx</code>
         <br />
-        Protected by{' '}
-        <code className="text-blue-300">src/routes/admin/guard.tsx</code>.
+        Protected by <code className="text-blue-300">src/routes/admin/guard.tsx</code>.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-lg border border-red-800 bg-red-950/30 p-4">

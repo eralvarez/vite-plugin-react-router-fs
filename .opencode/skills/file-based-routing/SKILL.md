@@ -1,9 +1,9 @@
 ---
 name: file-based-routing
-description: Create views, guards, and layouts for this project's file-based routing system. Use when adding a new route, creating a layout, adding a guard, creating a protected section, or asking about the routing conventions in this React Router v7 SPA.
+description: Create views, guards, and layouts for this project's file-based routing system. Use when adding a new route, creating a layout, adding a guard, creating a protected section, creating a route group, or asking about the routing conventions in this React Router v7 SPA.
 ---
 
-# File-Based Routing — Views, Layouts & Guards
+# File-Based Routing — Views, Layouts, Guards & Groups
 
 This project uses a custom Vite plugin that scans `src/routes/` and auto-generates
 `src/routes.ts`. **You never edit `src/routes.ts` manually.** Drop a `.tsx` file in
@@ -14,19 +14,22 @@ file save.
 
 ## Quick Reference
 
-| File                              | URL                | Type                                  |
-| --------------------------------- | ------------------ | ------------------------------------- |
-| `src/routes/index.tsx`            | `/`                | view                                  |
-| `src/routes/contact.tsx`          | `/contact`         | view                                  |
-| `src/routes/blog/index.tsx`       | `/blog`            | view                                  |
-| `src/routes/blog/[slug].tsx`      | `/blog/:slug`      | view (dynamic)                        |
-| `src/routes/admin/users/[id].tsx` | `/admin/users/:id` | view (dynamic + nested)               |
-| `src/routes/[...slug].tsx`        | `*`                | catch-all view                        |
-| `src/routes/layout.tsx`           | —                  | root layout (wraps everything)        |
-| `src/routes/dashboard/layout.tsx` | —                  | section layout (wraps `/dashboard/*`) |
-| `src/routes/dashboard/guard.tsx`  | —                  | section guard (wraps `/dashboard/*`)  |
+| File                                 | URL                | Type                                  |
+| ------------------------------------ | ------------------ | ------------------------------------- |
+| `src/routes/index.tsx`               | `/`                | view                                  |
+| `src/routes/contact.tsx`             | `/contact`         | view                                  |
+| `src/routes/blog/index.tsx`          | `/blog`            | view                                  |
+| `src/routes/blog/[slug].tsx`         | `/blog/:slug`      | view (dynamic)                        |
+| `src/routes/admin/users/[id].tsx`    | `/admin/users/:id` | view (dynamic + nested)               |
+| `src/routes/[...slug].tsx`           | `*`                | catch-all view                        |
+| `src/routes/layout.tsx`              | —                  | root layout (wraps everything)        |
+| `src/routes/dashboard/layout.tsx`    | —                  | section layout (wraps `/dashboard/*`) |
+| `src/routes/dashboard/guard.tsx`     | —                  | section guard (wraps `/dashboard/*`)  |
+| `src/routes/(marketing)/`            | —                  | route group (URL-invisible folder)    |
+| `src/routes/(marketing)/pricing.tsx` | `/pricing`         | view inside group                     |
 
 **Special files `layout.tsx` and `guard.tsx` are never registered as routes.**
+**Group folders `(name)` never appear in any URL.**
 
 ---
 
@@ -282,7 +285,138 @@ await page.goto('/settings?allowed=true');
 
 ---
 
-## 4 · Nesting Rules (How They Stack)
+## 4 · Creating a Route Group
+
+A **route group** is a folder whose name is wrapped in parentheses: `(name)`.
+The folder name is completely stripped from the URL — routes inside it appear at the
+parent URL level. A group can carry its own `layout.tsx` and/or `guard.tsx` that
+apply exclusively to the routes inside it.
+
+**Use groups when you need:**
+
+- A shared layout for a subset of routes _without_ adding a URL segment
+- Different guard rules for different routes at the same URL level
+- Logical file organization that doesn't affect URLs
+
+### Group with layout only
+
+```
+src/routes/
+  (marketing)/
+    layout.tsx     ← wraps /pricing and /features only
+    pricing.tsx    → /pricing
+    features.tsx   → /features
+  about.tsx        → /about   ← no marketing layout here
+```
+
+```tsx
+// src/routes/(marketing)/layout.tsx
+import { Outlet } from 'react-router';
+
+export default function MarketingLayout() {
+  return (
+    <div data-testid="marketing-layout">
+      <nav>Marketing nav</nav>
+      <Outlet />
+    </div>
+  );
+}
+```
+
+### Group with guard + layout
+
+```
+src/routes/
+  (members)/
+    guard.tsx      ← blocks /account and /billing without ?member=true
+    layout.tsx     ← wraps /account and /billing after guard passes
+    account.tsx    → /account
+    billing.tsx    → /billing
+```
+
+```tsx
+// src/routes/(members)/guard.tsx
+import { Outlet, Navigate, useSearchParams } from 'react-router';
+
+export default function MembersGuard() {
+  const [searchParams] = useSearchParams();
+  const isMember =
+    searchParams.get('member') === 'true' ||
+    localStorage.getItem('member') === 'true';
+
+  return isMember ? (
+    <Outlet />
+  ) : (
+    <Navigate
+      to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`}
+      replace
+    />
+  );
+}
+```
+
+### Group with guard only (no layout)
+
+```
+src/routes/
+  (beta)/
+    guard.tsx          ← blocks /beta-features without ?beta=true
+    beta-features.tsx  → /beta-features
+```
+
+### Nested groups
+
+Groups can be nested. Each level's name is stripped and each level's layout/guard
+stacks inward:
+
+```
+src/routes/
+  (shop)/
+    layout.tsx         ← outer layout, wraps /payment
+    (checkout)/
+      layout.tsx       ← inner layout, also wraps /payment (stacks with shop layout)
+      payment.tsx      → /payment
+```
+
+The render tree for `/payment` is:
+
+```
+RootLayout
+  └── ShopLayout            (group-shop-layout)
+        └── CheckoutLayout  (group-checkout-layout)
+              └── PaymentPage
+```
+
+### Multiple groups at the same level (independent guard scopes)
+
+```
+src/routes/
+  (members)/
+    guard.tsx      ← requires ?member=true
+    account.tsx    → /account
+  (beta)/
+    guard.tsx      ← requires ?beta=true
+    beta-features.tsx → /beta-features
+  about.tsx        → /about  ← no guard
+```
+
+`?member=true` grants `/account` but NOT `/beta-features`.
+`?beta=true` grants `/beta-features` but NOT `/account`.
+Neither param affects `/about`.
+
+**Rules:**
+
+- The folder must be named with parentheses: `(name)` not `name`.
+- The folder name cannot be empty: `()` is not valid.
+- Dynamic group names like `([param])` are not supported.
+- If two groups produce the same URL segment, the plugin emits a `console.warn` and
+  React Router matches the first declaration.
+- `data-testid` convention for group layouts: `group-<name>-layout`
+  (e.g., `group-members-layout`, `group-checkout-layout`).
+
+---
+
+## 5 · Nesting Rules (How They Stack)
 
 Given this directory:
 
@@ -310,22 +444,35 @@ Order within a directory: **guard → layout → route children**.
 If you add a `guard.tsx` to `src/routes/admin/users/`, it applies _only_ to routes
 under `/admin/users/`, nested inside the admin guard and layout.
 
+**Groups add a transparent scope layer:** for `(members)/guard.tsx` + `(members)/layout.tsx`:
+
+```
+RootLayout
+  └── MembersGuard              (pathless — blocks /account, /billing)
+        └── MembersLayout       (pathless — wraps /account, /billing)
+              ├── AccountPage   → /account
+              └── BillingPage   → /billing
+```
+
+The group scope sits inside the root layout but produces no URL segment.
+
 ---
 
-## 5 · File & Component Naming Conventions
+## 6 · File & Component Naming Conventions
 
-| Convention               | Example                                                 |
-| ------------------------ | ------------------------------------------------------- |
-| File name                | `kebab-case.tsx` or `[param].tsx`                       |
-| Component name           | `PascalCase`, descriptive, matches the page             |
-| Guard component          | `<Section>Guard` — e.g. `DashboardGuard`, `AdminGuard`  |
-| Layout component         | `<Section>Layout` — e.g. `ProductsLayout`, `BlogLayout` |
-| `data-testid` on views   | `page-<kebab-path>` — e.g. `page-admin-users`           |
-| `data-testid` on layouts | `<section>-layout` — e.g. `admin-layout`                |
+| Convention               | Example                                                      |
+| ------------------------ | ------------------------------------------------------------ |
+| File name                | `kebab-case.tsx` or `[param].tsx`                            |
+| Component name           | `PascalCase`, descriptive, matches the page                  |
+| Guard component          | `<Section>Guard` — e.g. `DashboardGuard`, `MembersGuard`     |
+| Layout component         | `<Section>Layout` — e.g. `ProductsLayout`, `MarketingLayout` |
+| Group folder name        | `(kebab-case)` — e.g. `(marketing)`, `(shop)`                |
+| `data-testid` on views   | `page-<kebab-path>` — e.g. `page-admin-users`                |
+| `data-testid` on layouts | `<section>-layout` or `group-<name>-layout` for groups       |
 
 ---
 
-## 6 · TypeScript Checklist
+## 7 · TypeScript Checklist
 
 - [ ] `useParams<{ paramName: string }>()` — always type the generic
 - [ ] `useSearchParams()` — destructure as `const [searchParams] = useSearchParams()`
@@ -336,7 +483,7 @@ under `/admin/users/`, nested inside the admin guard and layout.
 
 ---
 
-## 7 · Adding a New Protected Section (End-to-End Example)
+## 8 · Adding a New Protected Section (End-to-End Example)
 
 **Goal:** add `/settings` with a guard and a layout containing two sub-pages.
 
@@ -427,7 +574,7 @@ The plugin regenerates `src/routes.ts` automatically. No manual registration.
 
 ---
 
-## 8 · Common Mistakes
+## 9 · Common Mistakes
 
 | Mistake                                      | Fix                                                                             |
 | -------------------------------------------- | ------------------------------------------------------------------------------- |
@@ -439,3 +586,6 @@ The plugin regenerates `src/routes.ts` automatically. No manual registration.
 | Missing `data-testid`                        | Playwright tests can't target the element reliably. Add it to the root element. |
 | Dynamic param file named `param.tsx`         | Won't create a dynamic route. Use `[param].tsx` with square brackets.           |
 | Catch-all file not at root                   | `[...slug].tsx` inside a subdirectory only catches paths under that prefix.     |
+| Group folder missing parentheses             | `marketing/` creates a `/marketing` URL segment. `(marketing)/` does not.       |
+| Expecting group name in URL                  | Group folder names are always stripped. `/pricing` not `/(marketing)/pricing`.  |
+| Using `()` as a group name                   | Empty group names are invalid. Always use `(name)` with at least one character. |
