@@ -3,25 +3,28 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "react-router build",
-    "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
+    "dev": "vite --port 3000",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "serve dist -p 3000",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@react-router/node": "7.16.0",
-    "@react-router/serve": "7.16.0",
-    "isbot": "^5.1.36",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router": "7.16.0"
   },
   "devDependencies": {
-    "@react-router/dev": "7.16.0",
+    "@playwright/test": "^1.53.0",
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^22",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "prettier": "^3.8.3",
+    "serve": "^14.2.6",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite": "^8.0.3"
