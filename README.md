@@ -1,18 +1,75 @@
-# File-Based Routing — React SPA
+# vite-plugin-react-router-fs
 
-A custom Vite plugin that auto-generates a React Router v7 SPA route config from files
+A Vite plugin that auto-generates a React Router v7 SPA route config from files
 in `src/routes/`. Drop a `.tsx` file in the right place and the route exists — no
 registration required.
 
+This repo contains both the plugin source (`plugin/`) and a full example application
+(`src/`) that exercises every routing convention.
+
 ---
 
-## Getting Started
+## Plugin Development
+
+### Dev
+
+Run the example app while editing the plugin. Vite loads the plugin directly from
+`plugin/` source — no separate build step required during development.
 
 ```bash
 npm install
+npm run dev        # starts example app on port 3000, watches src/routes/ for changes
+```
+
+The example app in `src/routes/` covers every supported convention (layouts, guards,
+groups, dynamic segments, catch-all). Use it to verify plugin changes interactively.
+
+Run the full e2e test suite against a production build at any point:
+
+```bash
+npm run test:e2e   # builds the example app, starts vite preview, runs Playwright
+```
+
+### Build
+
+Compile the plugin to `dist/` for distribution. Outputs ESM, CJS, and TypeScript
+declarations.
+
+```bash
+npm run build:plugin
+```
+
+Output:
+
+```
+dist/
+  index.js       # ESM
+  index.cjs      # CommonJS
+  index.d.ts     # TypeScript declarations (ESM)
+  index.d.cts    # TypeScript declarations (CJS)
+```
+
+### Publish
+
+`prepublishOnly` runs `build:plugin` automatically — just bump the version and publish:
+
+```bash
+npm version patch   # or minor / major
+npm publish
+```
+
+Only the `dist/` folder is included in the published package (configured via the
+`files` field in `package.json`). The example app, e2e tests, and plugin source are
+not published.
+
+---
+
+## Example App Scripts
+
+```bash
 npm run dev        # start dev server on port 3000 (auto-generates src/routes.ts)
-npm run build      # production build
-npm start          # serve dist/ on port 3000 (after build)
+npm run build      # production build → dist-app/
+npm start          # serve dist-app/ on port 3000 (after build)
 npm run preview    # Vite preview server
 npm run format     # run Prettier across the whole project
 npm run test:e2e   # run Playwright e2e tests
@@ -196,21 +253,23 @@ fileBasedRouting({
 
 ```
 project-root/
-├── plugin/              # Vite plugin source
+├── plugin/              # Vite plugin source (published to npm)
 │   ├── index.ts         # Plugin factory & Vite hooks
 │   ├── scanner.ts       # Recursive directory scanner → RouteNode tree
 │   ├── generator.ts     # RouteNode tree → src/routes.ts code
 │   └── types.ts         # Shared internal types
 │
-├── src/
+├── src/                 # Example application (not published)
 │   ├── routes/          # Application route files (user-written)
 │   ├── routes.ts        # AUTO-GENERATED — do not edit
 │   ├── main.tsx         # Entry: createBrowserRouter + RouterProvider
 │   └── app.css          # Global styles (Tailwind)
 │
+├── dist/                # Plugin build output (npm publish target)
+├── dist-app/            # Example app build output (e2e tests / npm start)
 ├── e2e/                 # Playwright e2e tests (108 tests)
-├── plans/               # Implementation plans
 ├── index.html           # SPA shell
+├── tsup.config.ts       # Plugin build config
 ├── vite.config.ts
 └── playwright.config.ts
 ```
@@ -237,12 +296,12 @@ The test suite covers:
 
 ## Deployment
 
-The build output is a fully static SPA in `dist/`:
+The build output is a fully static SPA in `dist-app/`:
 
 ```bash
 npm run build
 npm start          # serve locally with 'serve' package on port 3000
-# or deploy dist/ to any static CDN (Cloudflare Pages, Vercel, S3, Netlify, etc.)
+# or deploy dist-app/ to any static CDN (Cloudflare Pages, Vercel, S3, Netlify, etc.)
 ```
 
 For CDN deployments, configure all paths to serve `index.html` (client-side routing

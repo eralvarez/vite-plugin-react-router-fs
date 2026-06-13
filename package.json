@@ -1,20 +1,47 @@
 {
-  "name": "file-based-routing-example",
-  "private": true,
+  "name": "vite-plugin-react-router-fs",
+  "version": "0.1.0",
+  "description": "Vite plugin for file-based routing with React Router v7",
+  "license": "MIT",
   "type": "module",
+  "keywords": [
+    "vite",
+    "vite-plugin",
+    "react-router",
+    "file-based-routing",
+    "react"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "vite --port 3000",
     "build": "vite build",
+    "build:plugin": "tsup",
     "preview": "vite preview",
-    "start": "serve dist -s -p 3000",
+    "start": "serve dist-app -s -p 3000",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "prepublishOnly": "npm run build:plugin"
   },
-  "dependencies": {
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "react-router": "7.16.0"
+  "peerDependencies": {
+    "vite": ">=5.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.53.0",
@@ -24,8 +51,12 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "prettier": "^3.8.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router": "7.16.0",
     "serve": "^14.2.6",
     "tailwindcss": "^4.2.2",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vite": "^8.0.3"
   }

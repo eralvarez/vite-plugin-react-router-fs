@@ -2,6 +2,7 @@
 .env
 /node_modules/
 /dist/
+/dist-app/
 /test-results/
 
 # React Router
