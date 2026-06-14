@@ -1,5 +1,4 @@
-import { Outlet, NavLink } from 'react-router';
-import { useSearchParams } from 'react-router';
+import { Outlet, NavLink, useSearchParams } from 'react-router';
 
 export default function DashboardLayout() {
   const [searchParams] = useSearchParams();
@@ -7,30 +6,24 @@ export default function DashboardLayout() {
 
   return (
     <div data-testid="dashboard-layout">
-      <div className="mb-6 flex items-center gap-4 rounded-lg border border-slate-700 bg-slate-800 p-4">
-        <span className="font-semibold text-green-400">Dashboard</span>
+      <div className="subnav">
+        <span style={{ fontWeight: 600, color: '#4ade80' }}>Dashboard</span>
         <NavLink
           to={`/dashboard${authParam}`}
           end
-          className={({ isActive }) =>
-            isActive ? 'text-green-400 font-medium text-sm' : 'text-slate-400 hover:text-slate-200 text-sm'
-          }
+          className={({ isActive }) => (isActive ? 'nav-link active-green' : 'nav-link')}
         >
           Overview
         </NavLink>
         <NavLink
           to={`/dashboard/profile${authParam}`}
-          className={({ isActive }) =>
-            isActive ? 'text-green-400 font-medium text-sm' : 'text-slate-400 hover:text-slate-200 text-sm'
-          }
+          className={({ isActive }) => (isActive ? 'nav-link active-green' : 'nav-link')}
         >
           Profile
         </NavLink>
         <NavLink
           to={`/dashboard/settings${authParam}`}
-          className={({ isActive }) =>
-            isActive ? 'text-green-400 font-medium text-sm' : 'text-slate-400 hover:text-slate-200 text-sm'
-          }
+          className={({ isActive }) => (isActive ? 'nav-link active-green' : 'nav-link')}
         >
           Settings
         </NavLink>

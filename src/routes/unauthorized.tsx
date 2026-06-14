@@ -6,17 +6,14 @@ export default function UnauthorizedPage() {
 
   return (
     <div data-testid="page-unauthorized">
-      <h1 className="mb-4 text-3xl font-bold text-orange-400">Access Denied</h1>
-      <p className="mb-4 text-slate-300">
+      <h1 className="page-heading" style={{ color: '#fb923c' }}>Access Denied</h1>
+      <p style={{ color: '#cbd5e1', marginBottom: '1rem' }}>
         The admin guard redirected you here because you do not have the required role.
       </p>
-      <p className="mb-6 text-slate-400 text-sm">
-        Attempted path: <code className="text-blue-300">{from}</code>
+      <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+        Attempted path: <code style={{ color: '#93c5fd' }}>{from}</code>
       </p>
-      <Link
-        to={`${from}?role=admin`}
-        className="rounded bg-orange-500 px-4 py-2 text-black font-medium hover:bg-orange-400"
-      >
+      <Link to={`${from}?role=admin`} className="btn btn-orange">
         Simulate Admin Role (role=admin)
       </Link>
     </div>

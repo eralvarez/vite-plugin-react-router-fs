@@ -45,7 +45,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.53.0",
-    "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^22",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -55,7 +54,6 @@
     "react-dom": "^19.2.6",
     "react-router": "7.16.0",
     "serve": "^14.2.6",
-    "tailwindcss": "^4.2.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vite": "^8.0.3"

@@ -6,26 +6,22 @@ export default function AdminLayout() {
 
   return (
     <div data-testid="admin-layout">
-      <div className="mb-6 rounded-lg border border-red-800 bg-red-950/40 p-4">
-        <div className="mb-3 flex items-center gap-2">
-          <span className="rounded bg-red-600 px-2 py-0.5 text-xs font-bold text-white">ADMIN</span>
-          <span className="font-semibold text-red-400">Admin Panel</span>
+      <div className="subnav-admin">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+          <span className="badge badge-red">ADMIN</span>
+          <span style={{ fontWeight: 600, color: '#f87171' }}>Admin Panel</span>
         </div>
-        <nav className="flex gap-4">
+        <nav style={{ display: 'flex', gap: '1rem' }}>
           <NavLink
             to={`/admin${roleParam}`}
             end
-            className={({ isActive }) =>
-              isActive ? 'text-red-400 font-medium text-sm' : 'text-slate-400 hover:text-slate-200 text-sm'
-            }
+            className={({ isActive }) => (isActive ? 'nav-link active-red' : 'nav-link')}
           >
             Overview
           </NavLink>
           <NavLink
             to={`/admin/users${roleParam}`}
-            className={({ isActive }) =>
-              isActive ? 'text-red-400 font-medium text-sm' : 'text-slate-400 hover:text-slate-200 text-sm'
-            }
+            className={({ isActive }) => (isActive ? 'nav-link active-red' : 'nav-link')}
           >
             Users
           </NavLink>

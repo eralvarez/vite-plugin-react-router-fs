@@ -2,44 +2,28 @@ import { Outlet, NavLink } from 'react-router';
 
 export default function RootLayout() {
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
-      <header data-testid="root-layout-header" className="border-b border-slate-700 bg-slate-800">
-        <nav className="mx-auto flex max-w-5xl items-center gap-6 px-6 py-4">
-          <span className="text-lg font-bold text-blue-400">MyApp</span>
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) => (isActive ? 'text-blue-400 font-medium' : 'text-slate-300 hover:text-white')}
-          >
+    <div className="app-shell">
+      <header data-testid="root-layout-header" className="app-header">
+        <nav className="app-nav">
+          <span className="nav-brand">MyApp</span>
+          <NavLink to="/" end className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
             Home
           </NavLink>
-          <NavLink
-            to="/about"
-            className={({ isActive }) => (isActive ? 'text-blue-400 font-medium' : 'text-slate-300 hover:text-white')}
-          >
+          <NavLink to="/about" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
             About
           </NavLink>
-          <NavLink
-            to="/blog"
-            className={({ isActive }) => (isActive ? 'text-blue-400 font-medium' : 'text-slate-300 hover:text-white')}
-          >
+          <NavLink to="/blog" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
             Blog
           </NavLink>
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) => (isActive ? 'text-blue-400 font-medium' : 'text-slate-300 hover:text-white')}
-          >
+          <NavLink to="/dashboard" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
             Dashboard
           </NavLink>
-          <NavLink
-            to="/admin"
-            className={({ isActive }) => (isActive ? 'text-blue-400 font-medium' : 'text-slate-300 hover:text-white')}
-          >
+          <NavLink to="/admin" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
             Admin
           </NavLink>
         </nav>
       </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="app-main">
         <Outlet />
       </main>
     </div>

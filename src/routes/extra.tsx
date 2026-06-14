@@ -3,17 +3,15 @@ import { Link } from 'react-router';
 export default function ExtraPage() {
   return (
     <div data-testid="page-extra">
-      <h1 className="mb-4 text-3xl font-bold text-blue-400">Extra</h1>
-      <p className="mb-4 text-slate-300">
-        This page lives at <code className="text-blue-300">/extra</code>. It is a simple flat route file —{' '}
-        <code className="text-blue-300">src/routes/extra.tsx</code>.
+      <h1 className="page-heading" style={{ color: '#60a5fa' }}>Extra</h1>
+      <p style={{ color: '#cbd5e1', marginBottom: '1rem' }}>
+        This page lives at <code style={{ color: '#93c5fd' }}>/extra</code>. It is a simple flat route file —{' '}
+        <code style={{ color: '#93c5fd' }}>src/routes/extra.tsx</code>.
       </p>
-      <p className="mb-6 text-slate-400">
+      <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>
         The root <code>layout.tsx</code> wraps this page, so the navigation bar above is always visible.
       </p>
-      <Link to="/" className="text-blue-400 underline">
-        Back to Home
-      </Link>
+      <Link to="/">Back to Home</Link>
     </div>
   );
 }

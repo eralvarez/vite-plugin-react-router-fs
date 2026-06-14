@@ -16,37 +16,37 @@ export default function AdminUserDetail() {
 
   return (
     <div data-testid="page-admin-user-detail">
-      <p className="mb-2 text-sm text-slate-400">
-        Dynamic route: <code className="text-blue-300">src/routes/admin/users/[id].tsx</code>
+      <p style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: '#94a3b8' }}>
+        Dynamic route: <code style={{ color: '#93c5fd' }}>src/routes/admin/users/[id].tsx</code>
       </p>
-      <h1 className="mb-4 text-3xl font-bold text-red-400">
+      <h1 className="page-heading" style={{ color: '#f87171' }}>
         User <span data-testid="user-id">#{id}</span>
       </h1>
       {user ? (
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-          <dl className="space-y-3">
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <dl style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div>
-              <dt className="text-sm text-slate-400">Name</dt>
-              <dd className="font-medium text-white">{user.name}</dd>
+              <dt style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Name</dt>
+              <dd style={{ fontWeight: 500, color: '#fff' }}>{user.name}</dd>
             </div>
             <div>
-              <dt className="text-sm text-slate-400">Email</dt>
-              <dd className="text-slate-300">{user.email}</dd>
+              <dt style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Email</dt>
+              <dd style={{ color: '#cbd5e1' }}>{user.email}</dd>
             </div>
             <div>
-              <dt className="text-sm text-slate-400">Role</dt>
+              <dt style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Role</dt>
               <dd>
-                <span className="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300">{user.role}</span>
+                <span className="badge">{user.role}</span>
               </dd>
             </div>
           </dl>
         </div>
       ) : (
-        <p className="text-slate-400">
-          No user found with ID <code className="text-red-300">{id}</code>.
+        <p style={{ color: '#94a3b8' }}>
+          No user found with ID <code style={{ color: '#fca5a5' }}>{id}</code>.
         </p>
       )}
-      <Link to={`/admin/users${roleParam}`} className="mt-4 inline-block text-blue-400 underline">
+      <Link to={`/admin/users${roleParam}`} style={{ display: 'inline-block', marginTop: '1rem' }}>
         Back to Users
       </Link>
     </div>

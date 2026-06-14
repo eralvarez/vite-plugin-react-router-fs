@@ -6,26 +6,23 @@ export default function AdminIndex() {
 
   return (
     <div data-testid="page-admin">
-      <h1 className="mb-4 text-3xl font-bold text-red-400">Admin Overview</h1>
-      <p className="mb-6 text-slate-300">
-        Route: <code className="text-blue-300">src/routes/admin/index.tsx</code>
+      <h1 className="page-heading" style={{ color: '#f87171' }}>Admin Overview</h1>
+      <p style={{ color: '#cbd5e1', marginBottom: '1.5rem' }}>
+        Route: <code style={{ color: '#93c5fd' }}>src/routes/admin/index.tsx</code>
         <br />
-        Protected by <code className="text-blue-300">src/routes/admin/guard.tsx</code>.
+        Protected by <code style={{ color: '#93c5fd' }}>src/routes/admin/guard.tsx</code>.
       </p>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-red-800 bg-red-950/30 p-4">
-          <p className="text-sm text-slate-400">Total Users</p>
-          <p className="text-2xl font-bold text-white">256</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+        <div className="card card-admin">
+          <p className="stat-label">Total Users</p>
+          <p className="stat-value">256</p>
         </div>
-        <div className="rounded-lg border border-red-800 bg-red-950/30 p-4">
-          <p className="text-sm text-slate-400">Active Sessions</p>
-          <p className="text-2xl font-bold text-white">12</p>
+        <div className="card card-admin">
+          <p className="stat-label">Active Sessions</p>
+          <p className="stat-value">12</p>
         </div>
       </div>
-      <Link
-        to={`/admin/users${roleParam}`}
-        className="mt-6 inline-block rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-      >
+      <Link to={`/admin/users${roleParam}`} className="btn btn-red" style={{ marginTop: '1.5rem' }}>
         Manage Users
       </Link>
     </div>

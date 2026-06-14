@@ -1,5 +1,4 @@
-import { Link } from 'react-router';
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 
 export default function SettingsIndex() {
   const [searchParams] = useSearchParams();
@@ -7,30 +6,24 @@ export default function SettingsIndex() {
 
   return (
     <div data-testid="page-dashboard-settings">
-      <h1 className="mb-4 text-3xl font-bold text-green-400">Settings</h1>
-      <p className="mb-6 text-slate-300">
-        Route: <code className="text-blue-300">src/routes/dashboard/settings/index.tsx</code>
+      <h1 className="page-heading" style={{ color: '#4ade80' }}>Settings</h1>
+      <p style={{ color: '#cbd5e1', marginBottom: '1.5rem' }}>
+        Route: <code style={{ color: '#93c5fd' }}>src/routes/dashboard/settings/index.tsx</code>
       </p>
-      <div className="space-y-3">
-        <Link
-          to={`/dashboard/settings/account${authParam}`}
-          className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-800 p-4 hover:border-slate-500"
-        >
+      <div className="settings-list">
+        <Link to={`/dashboard/settings/account${authParam}`} className="settings-row">
           <div>
-            <p className="font-medium text-white">Account</p>
-            <p className="text-sm text-slate-400">Manage your account details</p>
+            <p style={{ fontWeight: 500, color: '#fff' }}>Account</p>
+            <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Manage your account details</p>
           </div>
-          <span className="text-slate-400">→</span>
+          <span style={{ color: '#94a3b8' }}>→</span>
         </Link>
-        <Link
-          to={`/dashboard/settings/security${authParam}`}
-          className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-800 p-4 hover:border-slate-500"
-        >
+        <Link to={`/dashboard/settings/security${authParam}`} className="settings-row">
           <div>
-            <p className="font-medium text-white">Security</p>
-            <p className="text-sm text-slate-400">Password and two-factor auth</p>
+            <p style={{ fontWeight: 500, color: '#fff' }}>Security</p>
+            <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Password and two-factor auth</p>
           </div>
-          <span className="text-slate-400">→</span>
+          <span style={{ color: '#94a3b8' }}>→</span>
         </Link>
       </div>
     </div>

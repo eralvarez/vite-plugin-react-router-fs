@@ -1,5 +1,4 @@
-import { Link } from 'react-router';
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 
 export default function ProfilePage() {
   const [searchParams] = useSearchParams();
@@ -7,25 +6,21 @@ export default function ProfilePage() {
 
   return (
     <div data-testid="page-dashboard-profile">
-      <h1 className="mb-4 text-3xl font-bold text-green-400">Profile</h1>
-      <p className="mb-4 text-slate-300">
-        Route: <code className="text-blue-300">src/routes/dashboard/profile.tsx</code>
+      <h1 className="page-heading" style={{ color: '#4ade80' }}>Profile</h1>
+      <p style={{ color: '#cbd5e1', marginBottom: '1rem' }}>
+        Route: <code style={{ color: '#93c5fd' }}>src/routes/dashboard/profile.tsx</code>
       </p>
-      <div className="mb-6 rounded-lg border border-slate-700 bg-slate-800 p-6">
-        <div className="mb-4 flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-600 text-2xl font-bold text-white">
-            U
-          </div>
+      <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+          <div className="avatar">U</div>
           <div>
-            <p className="font-semibold text-white">Demo User</p>
-            <p className="text-sm text-slate-400">demo@example.com</p>
+            <p style={{ fontWeight: 600, color: '#fff' }}>Demo User</p>
+            <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>demo@example.com</p>
           </div>
         </div>
-        <p className="text-slate-300">Member since January 2026</p>
+        <p style={{ color: '#cbd5e1' }}>Member since January 2026</p>
       </div>
-      <Link to={`/dashboard${authParam}`} className="text-blue-400 underline">
-        Back to Dashboard
-      </Link>
+      <Link to={`/dashboard${authParam}`}>Back to Dashboard</Link>
     </div>
   );
 }

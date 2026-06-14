@@ -5,19 +5,17 @@ export default function BlogPost() {
 
   return (
     <div data-testid="page-blog-post">
-      <p className="mb-2 text-sm text-slate-400">
-        Dynamic route: <code className="text-blue-300">src/routes/blog/[slug].tsx</code>
+      <p style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: '#94a3b8' }}>
+        Dynamic route: <code style={{ color: '#93c5fd' }}>src/routes/blog/[slug].tsx</code>
       </p>
-      <h1 className="mb-4 text-3xl font-bold text-purple-400">
+      <h1 className="page-heading" style={{ color: '#c084fc' }}>
         Post: <span data-testid="blog-slug">{slug}</span>
       </h1>
-      <p className="mb-6 text-slate-300">
-        The URL param <code className="text-blue-300">:slug</code> resolved to{' '}
-        <strong className="text-white">{slug}</strong>.
+      <p style={{ color: '#cbd5e1', marginBottom: '1.5rem' }}>
+        The URL param <code style={{ color: '#93c5fd' }}>:slug</code> resolved to{' '}
+        <strong style={{ color: '#fff' }}>{slug}</strong>.
       </p>
-      <Link to="/blog" className="text-blue-400 underline">
-        Back to Blog
-      </Link>
+      <Link to="/blog">Back to Blog</Link>
     </div>
   );
 }

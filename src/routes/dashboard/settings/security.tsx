@@ -6,27 +6,27 @@ export default function SecuritySettings() {
 
   return (
     <div data-testid="page-dashboard-settings-security">
-      <h1 className="mb-4 text-3xl font-bold text-green-400">Security Settings</h1>
-      <p className="mb-6 text-slate-300">
-        Route: <code className="text-blue-300">src/routes/dashboard/settings/security.tsx</code>
+      <h1 className="page-heading" style={{ color: '#4ade80' }}>Security Settings</h1>
+      <p style={{ color: '#cbd5e1', marginBottom: '1.5rem' }}>
+        Route: <code style={{ color: '#93c5fd' }}>src/routes/dashboard/settings/security.tsx</code>
       </p>
-      <div className="rounded-lg border border-slate-700 bg-slate-800 p-6">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <div>
-            <p className="font-medium text-white">Two-Factor Authentication</p>
-            <p className="text-sm text-slate-400">Add an extra layer of security</p>
+            <p style={{ fontWeight: 500, color: '#fff' }}>Two-Factor Authentication</p>
+            <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Add an extra layer of security</p>
           </div>
-          <button className="rounded bg-green-600 px-3 py-1 text-sm text-white hover:bg-green-700">Enable</button>
+          <button className="btn btn-green btn-sm">Enable</button>
         </div>
-        <div className="flex items-center justify-between">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <p className="font-medium text-white">Change Password</p>
-            <p className="text-sm text-slate-400">Last changed 30 days ago</p>
+            <p style={{ fontWeight: 500, color: '#fff' }}>Change Password</p>
+            <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Last changed 30 days ago</p>
           </div>
-          <button className="rounded bg-slate-700 px-3 py-1 text-sm text-white hover:bg-slate-600">Change</button>
+          <button className="btn btn-ghost btn-sm">Change</button>
         </div>
       </div>
-      <Link to={`/dashboard/settings${authParam}`} className="mt-4 inline-block text-blue-400 underline">
+      <Link to={`/dashboard/settings${authParam}`} style={{ display: 'inline-block', marginTop: '1rem' }}>
         Back to Settings
       </Link>
     </div>

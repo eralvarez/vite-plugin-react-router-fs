@@ -12,6 +12,19 @@ file save.
 
 ---
 
+## References
+
+For official React Router v7 API documentation (components, hooks, route shapes), see
+[references/react-router.md](references/react-router.md).
+
+| Topic | Reference |
+| ----- | --------- |
+| Routing, layouts, dynamic segments, splats | [react-router.md — routing](references/react-router.md#route-configuration) |
+| `Link`, `NavLink`, `Navigate`, `Outlet` | [react-router.md — components](references/react-router.md#components) |
+| `useParams`, `useSearchParams`, `useLocation` | [react-router.md — hooks](references/react-router.md#hooks) |
+
+---
+
 ## Quick Reference
 
 | File                                 | URL                | Type                                  |

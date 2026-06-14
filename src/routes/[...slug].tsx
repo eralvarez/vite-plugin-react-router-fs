@@ -5,16 +5,14 @@ export default function NotFound() {
   const location = useLocation();
   return (
     <div data-testid="page-not-found">
-      <h1 className="mb-4 text-4xl font-bold text-red-400">404 — Not Found</h1>
-      <p className="mb-4 text-slate-300">
-        No route matched <code className="text-red-300">{location.pathname}</code>.
+      <h1 className="page-heading-xl" style={{ color: '#f87171' }}>404 — Not Found</h1>
+      <p style={{ color: '#cbd5e1', marginBottom: '1rem' }}>
+        No route matched <code style={{ color: '#fca5a5' }}>{location.pathname}</code>.
       </p>
-      <p className="mb-6 text-slate-400">
-        This is the catch-all route: <code className="text-blue-300">src/routes/[...slug].tsx</code>
+      <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>
+        This is the catch-all route: <code style={{ color: '#93c5fd' }}>src/routes/[...slug].tsx</code>
       </p>
-      <Link to="/" className="text-blue-400 underline">
-        Go Home
-      </Link>
+      <Link to="/">Go Home</Link>
     </div>
   );
 }

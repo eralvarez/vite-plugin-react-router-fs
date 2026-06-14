@@ -6,15 +6,14 @@ export default function LoginPage() {
 
   return (
     <div data-testid="page-login">
-      <h1 className="mb-4 text-3xl font-bold text-yellow-400">Login Required</h1>
-      <p className="mb-4 text-slate-300">The dashboard guard redirected you here because you are not authenticated.</p>
-      <p className="mb-6 text-slate-400 text-sm">
-        Redirect target: <code className="text-blue-300">{redirect}</code>
+      <h1 className="page-heading" style={{ color: '#facc15' }}>Login Required</h1>
+      <p style={{ color: '#cbd5e1', marginBottom: '1rem' }}>
+        The dashboard guard redirected you here because you are not authenticated.
       </p>
-      <Link
-        to={`${redirect}?auth=true`}
-        className="rounded bg-yellow-500 px-4 py-2 text-black font-medium hover:bg-yellow-400"
-      >
+      <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+        Redirect target: <code style={{ color: '#93c5fd' }}>{redirect}</code>
+      </p>
+      <Link to={`${redirect}?auth=true`} className="btn btn-yellow">
         Simulate Login (auth=true)
       </Link>
     </div>
