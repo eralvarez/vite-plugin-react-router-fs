@@ -58,12 +58,10 @@ import { Link } from 'react-router';
 
 export default function ContactPage() {
   return (
-    <div data-testid="page-contact">
-      <h1 className="mb-4 text-3xl font-bold text-blue-400">Contact</h1>
-      <p className="text-slate-300">Get in touch.</p>
-      <Link to="/" className="text-blue-400 underline">
-        Home
-      </Link>
+    <div>
+      <h1>Contact</h1>
+      <p>Get in touch.</p>
+      <Link to="/">Home</Link>
     </div>
   );
 }
@@ -72,9 +70,7 @@ export default function ContactPage() {
 **Rules:**
 
 - The component name does not affect routing — the file path does.
-- Always add `data-testid="page-<name>"` to the root element for Playwright tests.
 - Use `Link` / `NavLink` from `react-router` for client-side navigation (not `<a>`).
-- Styling uses Tailwind CSS v4. Dark-first palette: `bg-slate-900 text-slate-100`.
 
 ### Index route for a directory
 
@@ -83,7 +79,7 @@ export default function ContactPage() {
 ```tsx
 // src/routes/products/index.tsx  →  /products
 export default function ProductsIndex() {
-  return <div data-testid="page-products">...</div>;
+  return <div>...</div>;
 }
 ```
 
@@ -99,9 +95,9 @@ export default function ProductDetail() {
   const { id } = useParams<{ id: string }>(); // ← always type the params
 
   return (
-    <div data-testid="page-product-detail">
+    <div>
       <h1>
-        Product <span data-testid="product-id">#{id}</span>
+        Product #{id}
       </h1>
     </div>
   );
@@ -120,7 +116,7 @@ import { useLocation } from 'react-router';
 export default function NotFound() {
   const { pathname } = useLocation();
   return (
-    <div data-testid="page-not-found">
+    <div>
       <h1>404 — Not Found</h1>
       <p>
         No route matched <code>{pathname}</code>
@@ -146,28 +142,13 @@ import { Outlet, NavLink } from 'react-router';
 
 export default function ProductsLayout() {
   return (
-    <div data-testid="products-layout">
+    <div>
       {/* Section sub-navigation */}
-      <nav className="mb-6 flex gap-4 border-b border-slate-700 pb-4">
-        <NavLink
-          to="/products"
-          end
-          className={({ isActive }) =>
-            isActive
-              ? 'text-blue-400 font-medium text-sm'
-              : 'text-slate-400 text-sm'
-          }
-        >
+      <nav>
+        <NavLink to="/products" end>
           All Products
         </NavLink>
-        <NavLink
-          to="/products/featured"
-          className={({ isActive }) =>
-            isActive
-              ? 'text-blue-400 font-medium text-sm'
-              : 'text-slate-400 text-sm'
-          }
-        >
+        <NavLink to="/products/featured">
           Featured
         </NavLink>
       </nav>
@@ -182,7 +163,6 @@ export default function ProductsLayout() {
 **Rules:**
 
 - `<Outlet />` is required — omitting it means child routes render into a void.
-- Add `data-testid="<section>-layout"` to the root element for test assertions.
 - Use `NavLink` (not `Link`) for navigation items that need an active style.
 - Pass `end` to `NavLink` on the index link so it only activates on an exact match.
 - Layouts nest: `src/routes/layout.tsx` renders, then `src/routes/products/layout.tsx`
@@ -259,8 +239,8 @@ export default function AdminGuard() {
 
 ### Guard testability pattern
 
-This project's guards are tested via **URL search params** so Playwright can exercise
-each branch without a backend. Follow this pattern for all new guards:
+This project's guards are tested via **URL search params** so each branch can be
+exercised without a backend. Follow this pattern for all new guards:
 
 ```tsx
 // src/routes/settings/guard.tsx
@@ -283,7 +263,7 @@ export default function SettingsGuard() {
 }
 ```
 
-Playwright tests then use:
+E2E tests then use:
 
 ```ts
 await page.goto('/settings?allowed=true');
@@ -328,7 +308,7 @@ import { Outlet } from 'react-router';
 
 export default function MarketingLayout() {
   return (
-    <div data-testid="marketing-layout">
+    <div>
       <nav>Marketing nav</nav>
       <Outlet />
     </div>
@@ -424,8 +404,6 @@ Neither param affects `/about`.
 - Dynamic group names like `([param])` are not supported.
 - If two groups produce the same URL segment, the plugin emits a `console.warn` and
   React Router matches the first declaration.
-- `data-testid` convention for group layouts: `group-<name>-layout`
-  (e.g., `group-members-layout`, `group-checkout-layout`).
 
 ---
 
@@ -480,8 +458,6 @@ The group scope sits inside the root layout but produces no URL segment.
 | Guard component          | `<Section>Guard` — e.g. `DashboardGuard`, `MembersGuard`     |
 | Layout component         | `<Section>Layout` — e.g. `ProductsLayout`, `MarketingLayout` |
 | Group folder name        | `(kebab-case)` — e.g. `(marketing)`, `(shop)`                |
-| `data-testid` on views   | `page-<kebab-path>` — e.g. `page-admin-users`                |
-| `data-testid` on layouts | `<section>-layout` or `group-<name>-layout` for groups       |
 
 ---
 
@@ -539,27 +515,12 @@ export default function SettingsLayout() {
   const q = searchParams.get('auth') ? `?auth=true` : '';
 
   return (
-    <div data-testid="settings-layout">
-      <nav className="mb-6 flex gap-4 border-b border-slate-700 pb-4">
-        <NavLink
-          to={`/settings${q}`}
-          end
-          className={({ isActive }) =>
-            isActive
-              ? 'text-blue-400 text-sm font-medium'
-              : 'text-slate-400 text-sm'
-          }
-        >
+    <div>
+      <nav>
+        <NavLink to={`/settings${q}`} end>
           General
         </NavLink>
-        <NavLink
-          to={`/settings/profile${q}`}
-          className={({ isActive }) =>
-            isActive
-              ? 'text-blue-400 text-sm font-medium'
-              : 'text-slate-400 text-sm'
-          }
-        >
+        <NavLink to={`/settings/profile${q}`}>
           Profile
         </NavLink>
       </nav>
@@ -574,8 +535,8 @@ export default function SettingsLayout() {
 ```tsx
 export default function SettingsIndex() {
   return (
-    <div data-testid="page-settings">
-      <h1 className="text-3xl font-bold text-blue-400">Settings</h1>
+    <div>
+      <h1>Settings</h1>
     </div>
   );
 }
@@ -596,7 +557,6 @@ The plugin regenerates `src/routes.ts` automatically. No manual registration.
 | Returning `null` from a guard                | Returns an empty screen instead of a redirect. Use `<Navigate>` instead.        |
 | Using `<a href="...">` for navigation        | Causes a full-page reload. Use `<Link>` from `react-router`.                    |
 | Using `NavLink` without `end` on index links | The `/dashboard` link stays "active" on `/dashboard/profile`. Add `end`.        |
-| Missing `data-testid`                        | Playwright tests can't target the element reliably. Add it to the root element. |
 | Dynamic param file named `param.tsx`         | Won't create a dynamic route. Use `[param].tsx` with square brackets.           |
 | Catch-all file not at root                   | `[...slug].tsx` inside a subdirectory only catches paths under that prefix.     |
 | Group folder missing parentheses             | `marketing/` creates a `/marketing` URL segment. `(marketing)/` does not.       |

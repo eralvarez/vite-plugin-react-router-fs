@@ -250,6 +250,29 @@ src/routes.ts
 
 ---
 
+## AI Coding Agent Skill
+
+This repo ships a **`file-based-routing` skill** for AI coding agents (OpenCode, etc.).
+Once installed, the agent understands this plugin's conventions and can create views,
+layouts, guards, and route groups correctly without extra explanation.
+
+The skill covers:
+
+- Creating static, dynamic, and catch-all routes
+- Adding layouts (`layout.tsx`) and guards (`guard.tsx`)
+- Creating and nesting route groups (`(name)/`)
+- TypeScript best practices (`useParams<{…}>()`, imports from `'react-router'`, etc.)
+- Guard testability patterns using URL search params
+
+**Install via:**
+
+```bash
+npx skills add eralvarez/vite-plugin-react-router-fs
+```
+
+After installation, the agent will load the skill automatically whenever you ask it to
+add a route, create a layout, add a guard, or work with route groups in this project.
+
 ---
 
 ## Plugin Development
