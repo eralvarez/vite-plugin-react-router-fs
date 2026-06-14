@@ -1,87 +1,102 @@
 # vite-plugin-react-router-fs
 
-A Vite plugin that auto-generates a React Router v7 SPA route config from files
-in `src/routes/`. Drop a `.tsx` file in the right place and the route exists — no
-registration required.
+A Vite plugin that generates a React Router v7 SPA route config from your file system.
+Drop a `.tsx` file in `src/routes/` and the route exists — no manual registration required.
 
-This repo contains both the plugin source (`plugin/`) and a full example application
-(`src/`) that exercises every routing convention.
+> **Important:** this plugin targets React Router's [data mode](https://reactrouter.com/start/modes#data)
+> (`createBrowserRouter` + `RouterProvider`). It is not compatible with framework mode (Remix-style).
 
 ---
 
-## Plugin Development
+## Quick Start
 
-### Dev
-
-Run the example app while editing the plugin. Vite loads the plugin directly from
-`plugin/` source — no separate build step required during development.
+### 1. Create a new Vite + React project
 
 ```bash
+npx create-vite@latest my-app -- --template react-ts
+cd my-app
 npm install
-npm run dev        # starts example app on port 3000, watches src/routes/ for changes
 ```
 
-The example app in `src/routes/` covers every supported convention (layouts, guards,
-groups, dynamic segments, catch-all). Use it to verify plugin changes interactively.
-
-Run the full e2e test suite against a production build at any point:
+### 2. Install React Router
 
 ```bash
-npm run test:e2e   # builds the example app, starts vite preview, runs Playwright
+npm i react-router
 ```
 
-### Build
-
-Compile the plugin to `dist/` for distribution. Outputs ESM, CJS, and TypeScript
-declarations.
+### 3. Install this plugin
 
 ```bash
-npm run build:plugin
+npm i -D vite-plugin-react-router-fs
 ```
 
-Output:
+### 4. Register the plugin in `vite.config.ts`
 
+```ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { fileBasedRouting } from 'vite-plugin-react-router-fs';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    fileBasedRouting({
+      routesDir: 'src/routes', // directory to scan
+      output: 'src/routes.ts', // generated file (auto-updated)
+    }),
+  ],
+});
 ```
-dist/
-  index.js       # ESM
-  index.cjs      # CommonJS
-  index.d.ts     # TypeScript declarations (ESM)
-  index.d.cts    # TypeScript declarations (CJS)
+
+### 5. Wire up the router in `src/main.tsx`
+
+```tsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { createBrowserRouter, RouterProvider } from 'react-router';
+import routes from './routes';
+
+const router = createBrowserRouter(routes);
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <RouterProvider router={router} />
+  </StrictMode>,
+);
 ```
 
-### Publish
-
-`prepublishOnly` runs `build:plugin` automatically — just bump the version and publish:
+### 6. Create your first routes
 
 ```bash
-npm version patch   # or minor / major
-npm publish
+mkdir src/routes
 ```
 
-Only the `dist/` folder is included in the published package (configured via the
-`files` field in `package.json`). The example app, e2e tests, and plugin source are
-not published.
+```tsx
+// src/routes/index.tsx  →  /
+export default function Home() {
+  return <h1>Home</h1>;
+}
 
----
+// src/routes/about.tsx  →  /about
+export default function About() {
+  return <h1>About</h1>;
+}
+```
 
-## Example App Scripts
+Start the dev server — `src/routes.ts` is auto-generated and stays in sync as you add files:
 
 ```bash
-npm run dev        # start dev server on port 3000 (auto-generates src/routes.ts)
-npm run build      # production build → dist-app/
-npm start          # serve dist-app/ on port 3000 (after build)
-npm run preview    # Vite preview server
-npm run format     # run Prettier across the whole project
-npm run test:e2e   # run Playwright e2e tests
-npm run typecheck  # TypeScript type check
+npm run dev
 ```
+
+> `src/routes.ts` is auto-generated. Add it to `.gitignore` if you prefer not to commit it.
 
 ---
 
 ## File Convention
 
 Routes live under `src/routes/`. The plugin scans this directory recursively and
-generates `src/routes.ts` on startup and whenever a file changes.
+generates `src/routes.ts` on startup and on every file change.
 
 ### Route files
 
@@ -95,21 +110,20 @@ generates `src/routes.ts` on startup and whenever a file changes.
 | `src/routes/admin/users/[id].tsx`           | `/admin/users/:id`            |
 | `src/routes/[...slug].tsx`                  | `*` (catch-all)               |
 
-### Special files — never routes
+### Reserved filenames — never treated as routes
 
-| File         | Purpose                                                                     |
-| ------------ | --------------------------------------------------------------------------- |
-| `layout.tsx` | Wraps all routes at the same directory level and below                      |
-| `guard.tsx`  | Runs before the view; can allow (`<Outlet />`) or redirect (`<Navigate />`) |
+| File         | Purpose                                                                       |
+| ------------ | ----------------------------------------------------------------------------- |
+| `layout.tsx` | Wraps all routes at the same directory level and below                        |
+| `guard.tsx`  | Runs before the view; render `<Outlet />` to allow or `<Navigate />` to block |
 
 ---
 
 ## Layouts
 
-A `layout.tsx` in a directory wraps every route under that directory.
-Layouts nest from outermost to innermost — placing a `layout.tsx` at
-`src/routes/layout.tsx` wraps _all_ routes; placing one at
-`src/routes/admin/layout.tsx` wraps only admin routes, inside the root layout.
+A `layout.tsx` in a directory wraps every route under that directory. Layouts nest
+from outermost to innermost — `src/routes/layout.tsx` wraps everything; `src/routes/admin/layout.tsx`
+wraps only admin routes, nested inside the root layout.
 
 ```tsx
 // src/routes/layout.tsx
@@ -131,12 +145,11 @@ export default function RootLayout() {
 
 ## Guards
 
-A `guard.tsx` in a directory runs before the routes at that level are rendered.
-It uses React Router's layout route pattern — render `<Outlet />` to allow,
-or `<Navigate />` to redirect.
+A `guard.tsx` in a directory runs before any route at that level renders.
+Render `<Outlet />` to allow access, or `<Navigate />` to redirect.
 
-Guards nest: if both `src/routes/guard.tsx` and `src/routes/admin/guard.tsx`
-exist, both apply on admin routes (root guard outermost).
+Guards nest: both `src/routes/guard.tsx` and `src/routes/admin/guard.tsx` apply to
+admin routes (root guard outermost).
 
 ```tsx
 // src/routes/dashboard/guard.tsx
@@ -154,9 +167,8 @@ export default function DashboardGuard() {
 
 ## Route Groups
 
-A folder named `(name)` is a **route group**. The parentheses are stripped from
-the URL — routes inside the folder resolve as if the folder didn't exist — but the
-folder can still carry its own `layout.tsx` and `guard.tsx`.
+A folder named `(name)` is a route group. The name is stripped from all URLs, but the
+folder can carry its own `layout.tsx` and `guard.tsx` that scope only to routes inside it.
 
 ```
 src/routes/
@@ -169,19 +181,13 @@ src/routes/
     layout.tsx     ← wraps /account and /billing
     account.tsx    → /account
     billing.tsx    → /billing
-  about.tsx        → /about  (no group, no group layout/guard)
+  about.tsx        → /about
 ```
 
-**Key properties:**
-
 - The group name never appears in any URL.
-- Groups can carry `layout.tsx`, `guard.tsx`, both, or neither.
-- Multiple groups at the same directory level are independent — each has its own
-  guard/layout scope, so the same URL level can have different protection rules.
-- Groups nest: `(shop)/(checkout)/payment.tsx` → `/payment`, with both `(shop)` and
-  `(checkout)` layouts stacking.
-- If two groups produce a route with the same URL segment, the plugin emits a
-  `console.warn` at build time and React Router matches the first one.
+- Multiple groups at the same level are independent — each has its own guard/layout scope.
+- Groups nest: `(shop)/(checkout)/payment.tsx` → `/payment`, with both layouts stacking.
+- Duplicate URL segments across groups emit a `console.warn` at build time.
 
 ```tsx
 // src/routes/(members)/guard.tsx
@@ -198,10 +204,10 @@ export default function MembersGuard() {
 
 ## Dynamic Routes
 
-Wrap a path segment in square brackets to create a URL parameter:
+Wrap a segment in square brackets to create a URL parameter:
 
 ```
-src/routes/blog/[slug].tsx  →  /blog/:slug
+src/routes/blog/[slug].tsx       →  /blog/:slug
 src/routes/admin/users/[id].tsx  →  /admin/users/:id
 ```
 
@@ -221,24 +227,7 @@ Catch-all files are always placed last in the generated routes array.
 
 ---
 
-## Generated File
-
-`src/routes.ts` is auto-generated — **do not edit it manually**. It exports a
-`RouteObject[]` array compatible with `createBrowserRouter` from React Router v7.
-All route components are lazy-loaded for automatic code splitting.
-
-Add it to `.gitignore` if you prefer not to commit it:
-
-```
-# .gitignore
-src/routes.ts
-```
-
----
-
 ## Plugin Options
-
-Configured in `vite.config.ts`:
 
 ```ts
 fileBasedRouting({
@@ -249,7 +238,77 @@ fileBasedRouting({
 
 ---
 
-## Project Structure
+## Generated File
+
+`src/routes.ts` is auto-generated — do not edit it manually. It exports a `RouteObject[]`
+compatible with `createBrowserRouter`. All components are lazy-loaded for automatic code splitting.
+
+```
+# .gitignore
+src/routes.ts
+```
+
+---
+
+---
+
+## Plugin Development
+
+This repo contains both the plugin source (`plugin/`) and a full example application
+(`src/`) that exercises every routing convention.
+
+### Dev
+
+```bash
+npm install
+npm run dev        # example app on port 3000, watches src/routes/ for changes
+npm run test:e2e   # build + Playwright e2e suite (108 tests)
+```
+
+The example app covers every supported convention: layouts, guards, groups, dynamic
+segments, catch-all. Use it to verify plugin changes interactively.
+
+### Build
+
+Compiles the plugin to `dist/` (ESM, CJS, and TypeScript declarations):
+
+```bash
+npm run build:plugin
+```
+
+```
+dist/
+  index.js       # ESM
+  index.cjs      # CommonJS
+  index.d.ts     # TypeScript declarations (ESM)
+  index.d.cts    # TypeScript declarations (CJS)
+```
+
+### Publish
+
+`prepublishOnly` runs `build:plugin` automatically:
+
+```bash
+npm version patch   # or minor / major
+npm publish
+```
+
+Only `dist/` is included in the published package. The example app, e2e tests, and
+plugin source are not published.
+
+### Example App Scripts
+
+```bash
+npm run dev        # dev server on port 3000
+npm run build      # production build → dist-app/
+npm start          # serve dist-app/ on port 3000
+npm run preview    # Vite preview server
+npm run format     # Prettier --write .
+npm run typecheck  # tsc --noEmit
+npm run test:e2e   # Playwright e2e tests
+```
+
+### Project Structure
 
 ```
 project-root/
@@ -274,36 +333,12 @@ project-root/
 └── playwright.config.ts
 ```
 
----
+### E2E Test Coverage
 
-## Testing
-
-E2E tests use Playwright against a production build:
-
-```bash
-npm run test:e2e
-```
-
-The test suite covers:
-
-- **routing.spec.ts** — every route resolves, client-side nav works
-- **layouts.spec.ts** — root layout is omnipresent; section layouts scope correctly; nesting
-- **guards.spec.ts** — redirect without credentials; allow with credentials; guard independence; guard+layout composition
-- **dynamic.spec.ts** — param extraction for `:slug` and `:id`; catch-all behavior
-- **groups.spec.ts** — group URL resolution; layout scope isolation; guard block/allow; guard independence across groups; nested groups
-
----
-
-## Deployment
-
-The build output is a fully static SPA in `dist-app/`:
-
-```bash
-npm run build
-npm start          # serve locally with 'serve' package on port 3000
-# or deploy dist-app/ to any static CDN (Cloudflare Pages, Vercel, S3, Netlify, etc.)
-```
-
-For CDN deployments, configure all paths to serve `index.html` (client-side routing
-requires a catch-all rewrite rule). The `serve` package handles this automatically
-via its `--single` flag, which is already configured in `npm start`.
+| File              | What it tests                                                     |
+| ----------------- | ----------------------------------------------------------------- |
+| `routing.spec.ts` | Route resolution, client-side nav                                 |
+| `layouts.spec.ts` | Layout scope, nesting, isolation                                  |
+| `guards.spec.ts`  | Redirect/allow, guard independence, guard+layout composition      |
+| `dynamic.spec.ts` | Param extraction for `:slug` and `:id`, catch-all behavior        |
+| `groups.spec.ts`  | Group URL resolution, layout scope, guard block/allow, nesting    |
